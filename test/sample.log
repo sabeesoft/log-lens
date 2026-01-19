@@ -1,0 +1,20 @@
+{"level":"error","message":"Database connection failed","timestamp":"2024-01-15T10:30:00.000Z","service":"api","error":{"code":"ECONNREFUSED","errno":-111}}
+{"level":"info","message":"Server started on port 3000","timestamp":"2024-01-15T10:30:01.000Z","service":"api","port":3000}
+{"level":"warn","message":"Deprecated API endpoint accessed","timestamp":"2024-01-15T10:30:02.000Z","service":"api","endpoint":"/v1/users","client":"192.168.1.100"}
+{"level":"debug","message":"Cache hit for user profile","timestamp":"2024-01-15T10:30:03.000Z","service":"cache","userId":"user_123","ttl":3600}
+{"level":"info","message":"Request processed successfully","timestamp":"2024-01-15T10:30:04.000Z","service":"api","method":"GET","path":"/api/users","duration":45}
+{"level":"error","message":"Validation failed","timestamp":"2024-01-15T10:30:05.000Z","service":"api","errors":["Email is required","Password must be at least 8 characters"]}
+{"level":"info","message":"User authentication successful","timestamp":"2024-01-15T10:30:06.000Z","service":"auth","userId":"user_456","method":"jwt"}
+{"level":"warn","message":"Rate limit approaching threshold","timestamp":"2024-01-15T10:30:07.000Z","service":"api","client":"192.168.1.101","current":95,"limit":100}
+{"level":"debug","message":"SQL query executed","timestamp":"2024-01-15T10:30:08.000Z","service":"database","query":"SELECT * FROM users WHERE id = $1","duration":12}
+{"level":"info","message":"File uploaded successfully","timestamp":"2024-01-15T10:30:09.000Z","service":"storage","filename":"report.pdf","size":1048576,"userId":"user_789"}
+{"level":"error","message":"Payment processing failed","timestamp":"2024-01-15T10:30:10.000Z","service":"payment","orderId":"order_123","amount":99.99,"reason":"Insufficient funds"}
+{"level":"info","message":"Email notification sent","timestamp":"2024-01-15T10:30:11.000Z","service":"notification","recipient":"user@example.com","type":"welcome","status":"delivered"}
+{"level":"warn","message":"Slow query detected","timestamp":"2024-01-15T10:30:12.000Z","service":"database","query":"SELECT * FROM logs WHERE created_at > NOW() - INTERVAL '30 days'","duration":3500}
+{"level":"debug","message":"Redis connection pool status","timestamp":"2024-01-15T10:30:13.000Z","service":"cache","active":5,"idle":10,"waiting":0}
+{"level":"info","message":"Background job completed","timestamp":"2024-01-15T10:30:14.000Z","service":"worker","job":"cleanup-old-logs","duration":120000,"deletedCount":5000}
+{"level":"error","message":"External API timeout","timestamp":"2024-01-15T10:30:15.000Z","service":"api","provider":"stripe","endpoint":"https://api.stripe.com/v1/charges","timeout":30000}
+{"level":"info","message":"Session created","timestamp":"2024-01-15T10:30:16.000Z","service":"auth","sessionId":"sess_abc123","userId":"user_456","expiresAt":"2024-01-15T22:30:16.000Z"}
+{"level":"warn","message":"Memory usage high","timestamp":"2024-01-15T10:30:17.000Z","service":"system","used":1536,"total":2048,"percentage":75}
+{"level":"debug","message":"HTTP request received","timestamp":"2024-01-15T10:30:18.000Z","service":"api","method":"POST","path":"/api/orders","headers":{"content-type":"application/json","user-agent":"Mozilla/5.0"}}
+{"level":"info","message":"Webhook processed","timestamp":"2024-01-15T10:30:19.000Z","service":"webhook","provider":"github","event":"push","repository":"myapp/backend"}
