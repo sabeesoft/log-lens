@@ -1,32 +1,40 @@
-import React, { useState } from 'react';
-import { Search, Settings, X } from 'lucide-react';
+import { useState } from 'react';
+import { Search, Settings, X, FileText, Loader2 } from 'lucide-react';
 
 interface HeaderProps {
   searchTerm: string;
-  onSearch: (term: string) => void;
+  onSearchChange: (term: string) => void;
+  onSearchTrigger: () => void;
   onSettingsToggle: () => void;
   settingsOpen: boolean;
   filteredCount: number;
   totalCount: number;
+  fileName?: string;
+  isFiltering?: boolean;
 }
 
 export default function Header({
   searchTerm,
-  onSearch,
+  onSearchChange,
+  onSearchTrigger,
   onSettingsToggle,
   settingsOpen,
   filteredCount,
-  totalCount
+  totalCount,
+  fileName,
+  isFiltering = false
 }: HeaderProps) {
   const [inputValue, setInputValue] = useState(searchTerm);
 
   const handleSearch = () => {
-    onSearch(inputValue);
+    onSearchChange(inputValue);
+    onSearchTrigger();
   };
 
   const handleClear = () => {
     setInputValue('');
-    onSearch('');
+    onSearchChange('');
+    onSearchTrigger();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -59,7 +67,7 @@ export default function Header({
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Search logs..."
+            placeholder="Search logs... (Enter to search)"
             style={{
               width: '100%',
               padding: '8px 32px 8px 12px',
@@ -99,33 +107,75 @@ export default function Header({
         {/* Search button */}
         <button
           onClick={handleSearch}
+          disabled={isFiltering}
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             padding: '8px 12px',
-            backgroundColor: hasActiveSearch ? '#3b82f6' : '#222',
-            color: hasActiveSearch ? '#fff' : '#a1a1aa',
+            backgroundColor: isFiltering ? '#333' : hasActiveSearch ? '#3b82f6' : '#222',
+            color: isFiltering ? '#666' : hasActiveSearch ? '#fff' : '#a1a1aa',
             borderRadius: '6px',
             border: '1px solid',
-            borderColor: hasActiveSearch ? '#3b82f6' : '#333',
-            cursor: 'pointer',
+            borderColor: isFiltering ? '#333' : hasActiveSearch ? '#3b82f6' : '#333',
+            cursor: isFiltering ? 'not-allowed' : 'pointer',
             transition: 'all 0.15s ease',
             gap: '6px'
           }}
-          title="Search"
+          title="Search (Enter)"
         >
-          <Search size={14} />
+          {isFiltering ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Search size={14} />}
         </button>
       </div>
+
+      {/* File name display */}
+      {fileName && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '6px 12px',
+            backgroundColor: '#1a1a1a',
+            borderRadius: '6px',
+            border: '1px solid #333'
+          }}
+        >
+          <FileText size={14} color="#71717a" />
+          <span
+            style={{
+              fontSize: '12px',
+              color: '#d4d4d8',
+              fontFamily: 'monospace',
+              maxWidth: '200px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+            title={fileName}
+          >
+            {fileName}
+          </span>
+        </div>
+      )}
 
       {/* Spacer */}
       <div style={{ flex: 1 }} />
 
       {/* Results count */}
-      <div style={{ fontSize: '12px', color: '#71717a', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
-        <span style={{ color: '#d4d4d8', fontWeight: 600 }}>{filteredCount}</span>
-        <span> / {totalCount}</span>
+      <div style={{ fontSize: '12px', color: '#71717a', fontFamily: 'monospace', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        {isFiltering ? (
+          <>
+            <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+            <span>Filtering...</span>
+            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+          </>
+        ) : (
+          <>
+            <span style={{ color: '#d4d4d8', fontWeight: 600 }}>{filteredCount}</span>
+            <span> / {totalCount}</span>
+          </>
+        )}
       </div>
 
       {/* Settings toggle button */}

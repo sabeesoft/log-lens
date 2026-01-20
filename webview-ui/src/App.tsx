@@ -46,10 +46,12 @@ const testLogs = [
 
 export default function App() {
   const setLogs = useLogStore((state) => state.setLogs);
+  const setFileName = useLogStore((state) => state.setFileName);
 
   useEffect(() => {
     // Initialize with test data
     setLogs(testLogs);
+    setFileName('Test Data');
 
     // Listen for messages from the extension
     const handleMessage = (event: MessageEvent) => {
@@ -57,6 +59,9 @@ export default function App() {
       switch (message.type) {
         case "updateLogs":
           setLogs(message.logs);
+          if (message.fileName) {
+            setFileName(message.fileName);
+          }
           break;
       }
     };
@@ -67,7 +72,7 @@ export default function App() {
     vscode?.postMessage({ type: "requestLogs" });
 
     return () => window.removeEventListener("message", handleMessage);
-  }, [setLogs]);
+  }, [setLogs, setFileName]);
 
   return <LogViewer />;
 }

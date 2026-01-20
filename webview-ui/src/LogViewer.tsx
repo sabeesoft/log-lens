@@ -1,8 +1,8 @@
-import React from 'react';
 import Header from './components/Header';
 import SettingsPanel from './components/SettingsPanel';
 import LogList from './components/LogList';
 import Sidebar from './components/Sidebar';
+import LoadingOverlay from './components/LoadingOverlay';
 import { useLogFields } from './hooks/useLogFields';
 import { getLevelBorderColor } from './utils/logUtils';
 import { useLogStore } from './store/logStore';
@@ -10,6 +10,8 @@ import { useLogStore } from './store/logStore';
 export default function LogViewer() {
   // Zustand store
   const logs = useLogStore((state) => state.logs);
+  const fileName = useLogStore((state) => state.fileName);
+  const filteredLogs = useLogStore((state) => state.filteredLogs);
   const filters = useLogStore((state) => state.filters);
   const appliedFilters = useLogStore((state) => state.appliedFilters);
   const orderByField = useLogStore((state) => state.orderByField);
@@ -18,6 +20,7 @@ export default function LogViewer() {
   const visibleFields = useLogStore((state) => state.visibleFields);
   const settingsPanelOpen = useLogStore((state) => state.settingsPanelOpen);
   const searchTerm = useLogStore((state) => state.searchTerm);
+  const isFiltering = useLogStore((state) => state.isFiltering);
 
   const addFilter = useLogStore((state) => state.addFilter);
   const updateFilter = useLogStore((state) => state.updateFilter);
@@ -31,11 +34,10 @@ export default function LogViewer() {
   const setVisibleFields = useLogStore((state) => state.setVisibleFields);
   const toggleSettingsPanel = useLogStore((state) => state.toggleSettingsPanel);
   const setSearchTerm = useLogStore((state) => state.setSearchTerm);
-  const getFilteredLogs = useLogStore((state) => state.getFilteredLogs);
+  const triggerSearch = useLogStore((state) => state.triggerSearch);
   const getActiveSearchTerms = useLogStore((state) => state.getActiveSearchTerms);
 
   const allFields = useLogFields(logs);
-  const filteredLogs = getFilteredLogs();
   const activeSearchTerms = getActiveSearchTerms();
   const selectedLog = selectedLogIndex !== null ? filteredLogs[selectedLogIndex] : null;
 
@@ -57,11 +59,14 @@ export default function LogViewer() {
       {/* Fixed Header */}
       <Header
         searchTerm={searchTerm}
-        onSearch={setSearchTerm}
+        onSearchChange={setSearchTerm}
+        onSearchTrigger={triggerSearch}
         onSettingsToggle={toggleSettingsPanel}
         settingsOpen={settingsPanelOpen}
         filteredCount={filteredLogs.length}
         totalCount={logs.length}
+        fileName={fileName}
+        isFiltering={isFiltering}
       />
 
       {/* Main content area - fills remaining space */}
@@ -71,7 +76,8 @@ export default function LogViewer() {
           display: 'flex',
           flexDirection: 'column',
           minHeight: 0,
-          overflow: 'hidden'
+          overflow: 'hidden',
+          position: 'relative'
         }}
       >
         <LogList
@@ -84,6 +90,9 @@ export default function LogViewer() {
           levelField=""
           timestampField=""
         />
+
+        {/* Loading overlay */}
+        <LoadingOverlay visible={isFiltering} />
       </div>
 
       {/* Settings Panel (slide-out) */}

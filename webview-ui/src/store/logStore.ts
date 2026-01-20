@@ -4,6 +4,8 @@ import { Filter, LogEntry } from '../types';
 interface LogState {
   // Data
   logs: LogEntry[];
+  fileName: string;
+  filteredLogs: LogEntry[];
 
   // Filter state
   filters: Filter[];
@@ -18,9 +20,12 @@ interface LogState {
   visibleFields: string[];
   settingsPanelOpen: boolean;
   searchTerm: string;
+  appliedSearchTerm: string;
+  isFiltering: boolean;
 
   // Actions
   setLogs: (logs: LogEntry[]) => void;
+  setFileName: (fileName: string) => void;
 
   // Filter actions
   addFilter: () => void;
@@ -40,9 +45,12 @@ interface LogState {
   toggleSettingsPanel: () => void;
   setSettingsPanelOpen: (open: boolean) => void;
   setSearchTerm: (term: string) => void;
+  triggerSearch: () => void;
+
+  // Internal filter computation
+  computeFilteredLogs: () => void;
 
   // Computed/derived state
-  getFilteredLogs: () => LogEntry[];
   getActiveSearchTerms: () => string[];
 }
 
@@ -50,20 +58,44 @@ const getNestedValue = (obj: any, path: string): any => {
   return path.split('.').reduce((curr, key) => curr?.[key], obj);
 };
 
+// Cache for stringified logs to avoid repeated JSON.stringify calls
+let stringifyCache = new WeakMap<object, string>();
+
+const getStringified = (log: LogEntry): string => {
+  if (typeof log === 'string') return log;
+  let cached = stringifyCache.get(log as object);
+  if (!cached) {
+    cached = JSON.stringify(log).toLowerCase();
+    stringifyCache.set(log as object, cached);
+  }
+  return cached;
+};
+
 export const useLogStore = create<LogState>((set, get) => ({
   // Initial state
   logs: [],
+  fileName: '',
+  filteredLogs: [],
   filters: [{ id: Date.now(), field: '', operator: 'contains', value: '', relation: 'AND' }],
   appliedFilters: [],
   orderByField: '',
   orderByDirection: 'asc',
   selectedLogIndex: null,
-  visibleFields: ['all'], // Default to showing all fields
+  visibleFields: ['all'],
   settingsPanelOpen: false,
   searchTerm: '',
+  appliedSearchTerm: '',
+  isFiltering: false,
 
   // Actions
-  setLogs: (logs) => set({ logs }),
+  setLogs: (logs) => {
+    // Clear stringify cache when logs change
+    stringifyCache = new WeakMap();
+    set({ logs });
+    get().computeFilteredLogs();
+  },
+
+  setFileName: (fileName) => set({ fileName }),
 
   // Filter actions
   addFilter: () =>
@@ -81,20 +113,36 @@ export const useLogStore = create<LogState>((set, get) => ({
       filters: state.filters.filter((f) => f.id !== filterId)
     })),
 
-  applyFilters: () =>
+  applyFilters: () => {
     set((state) => ({
-      appliedFilters: [...state.filters]
-    })),
+      appliedFilters: [...state.filters],
+      appliedSearchTerm: state.searchTerm,
+      isFiltering: true
+    }));
+    get().computeFilteredLogs();
+  },
 
-  clearFilters: () =>
+  clearFilters: () => {
     set({
       filters: [{ id: Date.now(), field: '', operator: 'contains', value: '', relation: 'AND' }],
-      appliedFilters: []
-    }),
+      appliedFilters: [],
+      searchTerm: '',
+      appliedSearchTerm: '',
+      isFiltering: true
+    });
+    get().computeFilteredLogs();
+  },
 
   // Order actions
-  setOrderByField: (field) => set({ orderByField: field }),
-  setOrderByDirection: (direction) => set({ orderByDirection: direction }),
+  setOrderByField: (field) => {
+    set({ orderByField: field });
+    get().computeFilteredLogs();
+  },
+
+  setOrderByDirection: (direction) => {
+    set({ orderByDirection: direction });
+    get().computeFilteredLogs();
+  },
 
   // UI actions
   selectLog: (index) => set({ selectedLogIndex: index }),
@@ -105,21 +153,29 @@ export const useLogStore = create<LogState>((set, get) => ({
 
   setSettingsPanelOpen: (open) => set({ settingsPanelOpen: open }),
 
-  setSearchTerm: (term) => set({ searchTerm: term }),
+  setSearchTerm: (term) => {
+    set({ searchTerm: term });
+  },
+
+  triggerSearch: () => {
+    set((state) => ({
+      appliedSearchTerm: state.searchTerm,
+      isFiltering: true
+    }));
+    get().computeFilteredLogs();
+  },
 
   toggleFieldVisibility: (field) =>
     set((state) => {
       let visibleFields = [...state.visibleFields];
 
       if (field === 'all') {
-        // Toggle "all" - if already has "all", remove it, otherwise set to just "all"
         if (visibleFields.includes('all')) {
           visibleFields = [];
         } else {
           visibleFields = ['all'];
         }
       } else {
-        // Remove "all" if present when selecting specific field
         const allIndex = visibleFields.indexOf('all');
         if (allIndex > -1) {
           visibleFields.splice(allIndex, 1);
@@ -127,12 +183,10 @@ export const useLogStore = create<LogState>((set, get) => ({
 
         const index = visibleFields.indexOf(field);
         if (index > -1) {
-          // Remove if already visible (but keep at least one field)
           if (visibleFields.length > 1 || visibleFields.includes('all')) {
             visibleFields.splice(index, 1);
           }
         } else {
-          // Add if not visible
           visibleFields.push(field);
         }
       }
@@ -140,115 +194,118 @@ export const useLogStore = create<LogState>((set, get) => ({
       return { visibleFields };
     }),
 
-  // Computed state
-  getFilteredLogs: () => {
-    const { logs, appliedFilters, orderByField, orderByDirection, searchTerm } = get();
-    let result = logs;
+  // Compute filtered logs - called when filters/search/sort changes
+  computeFilteredLogs: () => {
+    const { logs, appliedFilters, orderByField, orderByDirection, appliedSearchTerm } = get();
 
-    // Apply quick search term first (searches across all text content)
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      result = result.filter((log) => {
-        if (typeof log === 'string') {
-          return log.toLowerCase().includes(searchLower);
-        }
-        // For objects, search in the JSON stringified version
-        return JSON.stringify(log).toLowerCase().includes(searchLower);
-      });
-    }
+    // Use requestAnimationFrame for smoother UI
+    requestAnimationFrame(() => {
+      let result = logs;
 
-    // Apply filters
-    if (appliedFilters.length > 0) {
-      result = result.filter((log) => {
-        // For string logs, match against the entire string
-        if (typeof log === 'string') {
-          return appliedFilters.some((filter) => {
-            if (!filter.value) return true;
-            const logValue = log.toLowerCase();
-            const filterValue = filter.value.toLowerCase();
-            switch (filter.operator) {
-              case 'contains':
-                return logValue.includes(filterValue);
-              case 'not_contains':
-                return !logValue.includes(filterValue);
-              case 'equals':
-                return logValue === filterValue;
-              default:
-                return true;
+      // Apply search term first (searches across all text content)
+      if (appliedSearchTerm.trim()) {
+        const searchLower = appliedSearchTerm.toLowerCase();
+        result = result.filter((log) => {
+          const stringified = getStringified(log);
+          return stringified.includes(searchLower);
+        });
+      }
+
+      // Apply filters
+      if (appliedFilters.length > 0) {
+        const validFilters = appliedFilters.filter(f => f.field && f.value);
+
+        if (validFilters.length > 0) {
+          // Pre-process filter groups once
+          const groups: Filter[][] = [];
+          let currentGroup: Filter[] = [];
+
+          validFilters.forEach((filter, index) => {
+            currentGroup.push(filter);
+            if (index === validFilters.length - 1 || validFilters[index + 1]?.relation === 'OR') {
+              if (currentGroup.length > 0) {
+                groups.push([...currentGroup]);
+                currentGroup = [];
+              }
             }
           });
-        }
 
-        // For object logs, use field-based filtering
-        const groups: Filter[][] = [];
-        let currentGroup: Filter[] = [];
+          // Pre-lowercase filter values
+          const processedGroups = groups.map(group =>
+            group.map(f => ({ ...f, valueLower: f.value.toLowerCase() }))
+          );
 
-        appliedFilters.forEach((filter, index) => {
-          if (!filter.field || !filter.value) return;
-          currentGroup.push(filter);
-          if (index === appliedFilters.length - 1 || appliedFilters[index + 1]?.relation === 'OR') {
-            if (currentGroup.length > 0) {
-              groups.push([...currentGroup]);
-              currentGroup = [];
+          result = result.filter((log) => {
+            if (typeof log === 'string') {
+              const logLower = log.toLowerCase();
+              return processedGroups.some(group =>
+                group.every(filter => {
+                  switch (filter.operator) {
+                    case 'contains':
+                      return logLower.includes(filter.valueLower);
+                    case 'not_contains':
+                      return !logLower.includes(filter.valueLower);
+                    case 'equals':
+                      return logLower === filter.valueLower;
+                    default:
+                      return true;
+                  }
+                })
+              );
             }
+
+            return processedGroups.some((group) => {
+              return group.every((filter) => {
+                const logValue = String(getNestedValue(log, filter.field) || '').toLowerCase();
+                switch (filter.operator) {
+                  case 'contains':
+                    return logValue.includes(filter.valueLower);
+                  case 'not_contains':
+                    return !logValue.includes(filter.valueLower);
+                  case 'equals':
+                    return logValue === filter.valueLower;
+                  default:
+                    return true;
+                }
+              });
+            });
+          });
+        }
+      }
+
+      // Apply sorting
+      if (orderByField) {
+        result = [...result].sort((a, b) => {
+          if (typeof a === 'string' && typeof b === 'string') {
+            const comparison = a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+            return orderByDirection === 'asc' ? comparison : -comparison;
           }
-        });
 
-        return groups.some((group) => {
-          return group.every((filter) => {
-            const logValue = String(getNestedValue(log, filter.field) || '').toLowerCase();
-            const filterValue = filter.value.toLowerCase();
-            switch (filter.operator) {
-              case 'contains':
-                return logValue.includes(filterValue);
-              case 'not_contains':
-                return !logValue.includes(filterValue);
-              case 'equals':
-                return logValue === filterValue;
-              default:
-                return true;
-            }
-          });
-        });
-      });
-    }
+          if (typeof a === 'string') return orderByDirection === 'asc' ? -1 : 1;
+          if (typeof b === 'string') return orderByDirection === 'asc' ? 1 : -1;
 
-    // Apply sorting
-    if (orderByField) {
-      result = [...result].sort((a, b) => {
-        // Handle string logs - sort alphabetically
-        if (typeof a === 'string' && typeof b === 'string') {
-          const comparison = a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+          const aValue = getNestedValue(a, orderByField);
+          const bValue = getNestedValue(b, orderByField);
+
+          const aStr = String(aValue || '');
+          const bStr = String(bValue || '');
+
+          const comparison = aStr.localeCompare(bStr, undefined, { numeric: true, sensitivity: 'base' });
           return orderByDirection === 'asc' ? comparison : -comparison;
-        }
+        });
+      }
 
-        // If one is string and other is object, put strings first
-        if (typeof a === 'string') return orderByDirection === 'asc' ? -1 : 1;
-        if (typeof b === 'string') return orderByDirection === 'asc' ? 1 : -1;
-
-        // Both are objects
-        const aValue = getNestedValue(a, orderByField);
-        const bValue = getNestedValue(b, orderByField);
-
-        const aStr = String(aValue || '');
-        const bStr = String(bValue || '');
-
-        const comparison = aStr.localeCompare(bStr, undefined, { numeric: true, sensitivity: 'base' });
-        return orderByDirection === 'asc' ? comparison : -comparison;
-      });
-    }
-
-    return result;
+      set({ filteredLogs: result, isFiltering: false });
+    });
   },
 
   getActiveSearchTerms: () => {
-    const { appliedFilters, searchTerm } = get();
+    const { appliedFilters, appliedSearchTerm } = get();
     const terms = appliedFilters
       .filter((f) => f.field === 'message' && f.value && f.operator === 'contains')
       .map((f) => f.value);
-    // Include the quick search term for highlighting
-    if (searchTerm.trim()) {
-      terms.push(searchTerm.trim());
+    if (appliedSearchTerm.trim()) {
+      terms.push(appliedSearchTerm.trim());
     }
     return terms;
   }

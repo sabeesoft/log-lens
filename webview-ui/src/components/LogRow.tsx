@@ -58,10 +58,9 @@ const LogRow = memo(({ log, isSelected, onClick, activeSearchTerms, getLevelBord
           cursor: 'pointer',
           padding: '4px 6px',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-start',
           gap: '6px',
-          height: '26px',
-          overflow: 'hidden'
+          minHeight: '26px'
         }}
       >
         <div
@@ -70,9 +69,8 @@ const LogRow = memo(({ log, isSelected, onClick, activeSearchTerms, getLevelBord
             color: '#d4d4d8',
             flex: 1,
             fontFamily: 'monospace',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word'
           }}
         >
           {highlightText(log, activeSearchTerms)}
@@ -97,14 +95,13 @@ const LogRow = memo(({ log, isSelected, onClick, activeSearchTerms, getLevelBord
         cursor: 'pointer',
         padding: '4px 6px',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         gap: '6px',
-        height: '26px',
-        overflow: 'hidden'
+        minHeight: '26px'
       }}
     >
       {logTimestamp && (
-        <span style={{ fontSize: '10px', color: '#52525b', fontFamily: 'monospace', whiteSpace: 'nowrap', flexShrink: 0 }}>
+        <span style={{ fontSize: '10px', color: '#52525b', fontFamily: 'monospace', whiteSpace: 'nowrap', flexShrink: 0, paddingTop: '1px' }}>
           {logTimestamp}
         </span>
       )}
@@ -114,9 +111,8 @@ const LogRow = memo(({ log, isSelected, onClick, activeSearchTerms, getLevelBord
           color: '#d4d4d8',
           flex: 1,
           fontFamily: 'monospace',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis'
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word'
         }}
       >
         {showAllFields ? (
@@ -126,7 +122,7 @@ const LogRow = memo(({ log, isSelected, onClick, activeSearchTerms, getLevelBord
             {visibleFields.map((field, index) => {
               const value = getNestedValue(log, field);
               if (value === undefined || value === null) return null;
-              const valueStr = String(value);
+              const valueStr = typeof value === 'object' ? JSON.stringify(value) : String(value);
               return (
                 <span key={field}>
                   <span style={{ color: '#71717a' }}>{field}:</span>

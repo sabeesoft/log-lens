@@ -1,6 +1,7 @@
 import { Disposable, Webview, WebviewPanel, window, Uri, ViewColumn } from "vscode";
 import { getUri } from "../utilities/getUri";
 import { getNonce } from "../utilities/getNonce";
+import * as path from "path";
 
 /**
  * This class manages the state and behavior of LogLens webview panels.
@@ -13,19 +14,26 @@ import { getNonce } from "../utilities/getNonce";
  * - Setting message listeners so data can be passed between the webview and extension
  */
 export class LogLensPanel {
-  public static currentPanel: LogLensPanel | undefined;
+  // Map of file paths to their panels (allows multiple panels for different files)
+  private static panels: Map<string, LogLensPanel> = new Map();
+
   private readonly _panel: WebviewPanel;
+  private readonly _filePath: string;
   private _disposables: Disposable[] = [];
   private _logs: any[] = [];
+  private _fileName: string;
 
   /**
    * The LogLensPanel class private constructor (called only from the render method).
    *
    * @param panel A reference to the webview panel
    * @param extensionUri The URI of the directory containing the extension
+   * @param filePath The path of the file being viewed
    */
-  private constructor(panel: WebviewPanel, extensionUri: Uri) {
+  private constructor(panel: WebviewPanel, extensionUri: Uri, filePath: string) {
     this._panel = panel;
+    this._filePath = filePath;
+    this._fileName = path.basename(filePath);
 
     // Set an event listener to listen for when the panel is disposed (i.e. when the user closes
     // the panel or when the panel is closed programmatically)
@@ -39,48 +47,67 @@ export class LogLensPanel {
   }
 
   /**
-   * Renders the current webview panel if it exists otherwise a new webview panel
-   * will be created and displayed.
+   * Renders a webview panel for a specific file. If a panel for that file exists,
+   * it will be revealed. Otherwise, a new panel will be created.
    *
    * @param extensionUri The URI of the directory containing the extension.
+   * @param filePath The path of the file being viewed.
    */
-  public static render(extensionUri: Uri) {
-    if (LogLensPanel.currentPanel) {
-      // If the webview panel already exists reveal it
-      LogLensPanel.currentPanel._panel.reveal(ViewColumn.One);
+  public static render(extensionUri: Uri, filePath: string = "untitled") {
+    const existingPanel = LogLensPanel.panels.get(filePath);
+
+    if (existingPanel) {
+      // If panel for this file exists, reveal it
+      existingPanel._panel.reveal(ViewColumn.One);
     } else {
-      // If a webview panel does not already exist create and show a new one
+      // Create a new panel for this file
+      const fileName = path.basename(filePath);
       const panel = window.createWebviewPanel(
         // Panel view type
         "logLens",
-        // Panel title
-        "Log Lens",
+        // Panel title - include filename
+        `Log Lens: ${fileName}`,
         // The editor column the panel should be displayed in
         ViewColumn.One,
         // Extra panel configurations
         {
           // Enable JavaScript in the webview
           enableScripts: true,
+          // Retain content when hidden (preserves filters and state)
+          retainContextWhenHidden: true,
           // Restrict the webview to only load resources from the `out` and `webview-ui/build` directories
           localResourceRoots: [Uri.joinPath(extensionUri, "out"), Uri.joinPath(extensionUri, "webview-ui/build")],
         }
       );
 
-      LogLensPanel.currentPanel = new LogLensPanel(panel, extensionUri);
+      const newPanel = new LogLensPanel(panel, extensionUri, filePath);
+      LogLensPanel.panels.set(filePath, newPanel);
     }
   }
 
   /**
-   * Sends logs to the webview
-   *
-   * @param logs Array of log entries (strings or objects)
+   * Gets the panel for a specific file path
    */
-  public static sendLogsToWebview(logs: any[]) {
-    if (LogLensPanel.currentPanel) {
-      LogLensPanel.currentPanel._logs = logs;
-      LogLensPanel.currentPanel._panel.webview.postMessage({
+  public static getPanel(filePath: string): LogLensPanel | undefined {
+    return LogLensPanel.panels.get(filePath);
+  }
+
+  /**
+   * Sends logs to the webview for a specific file
+   *
+   * @param filePath The file path to send logs to
+   * @param logs Array of log entries (strings or objects)
+   * @param fileName The name of the file being viewed
+   */
+  public static sendLogsToWebview(filePath: string, logs: any[], fileName: string) {
+    const panel = LogLensPanel.panels.get(filePath);
+    if (panel) {
+      panel._logs = logs;
+      panel._fileName = fileName;
+      panel._panel.webview.postMessage({
         type: "updateLogs",
-        logs: logs
+        logs: logs,
+        fileName: fileName
       });
     }
   }
@@ -89,7 +116,8 @@ export class LogLensPanel {
    * Cleans up and disposes of webview resources when the webview panel is closed.
    */
   public dispose() {
-    LogLensPanel.currentPanel = undefined;
+    // Remove from panels map
+    LogLensPanel.panels.delete(this._filePath);
 
     // Dispose of the current webview panel
     this._panel.dispose();
@@ -159,7 +187,8 @@ export class LogLensPanel {
             if (this._logs.length > 0) {
               webview.postMessage({
                 type: "updateLogs",
-                logs: this._logs
+                logs: this._logs,
+                fileName: this._fileName
               });
             }
             return;

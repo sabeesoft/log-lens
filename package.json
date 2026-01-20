@@ -3,11 +3,12 @@
   "displayName": "Log lens",
   "description": "Log lens a simple local tool to visualize JSON logs",
   "version": "0.0.1",
+  "publisher": "sabeesoft",
   "icon": "assets/icon.png",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sabolch/log-lens.git"
+    "url": "https://github.com/sabeesoft/log-lens.git"
   },
   "engines": {
     "vscode": "^1.75.0"

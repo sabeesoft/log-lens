@@ -1,10 +1,11 @@
 import { commands, ExtensionContext, window } from "vscode";
 import { LogLensPanel } from "./panels/LogLensPanel";
+import * as path from "path";
 
 export function activate(context: ExtensionContext) {
   // Create the show log lens command
   const showLogLensCommand = commands.registerCommand("log-lens.show", () => {
-    LogLensPanel.render(context.extensionUri);
+    LogLensPanel.render(context.extensionUri, "untitled");
   });
 
   // Create the load current file command
@@ -16,6 +17,8 @@ export function activate(context: ExtensionContext) {
     }
 
     const document = editor.document;
+    const filePath = document.fileName;
+    const fileName = path.basename(filePath);
 
     // Check if file is JSON
     if (document.languageId !== "json" && !document.fileName.endsWith('.json')) {
@@ -33,9 +36,9 @@ export function activate(context: ExtensionContext) {
         return;
       }
 
-      // Open the panel and send logs
-      LogLensPanel.render(context.extensionUri);
-      LogLensPanel.sendLogsToWebview(logs);
+      // Open the panel for this specific file and send logs
+      LogLensPanel.render(context.extensionUri, filePath);
+      LogLensPanel.sendLogsToWebview(filePath, logs, fileName);
 
     } catch (error) {
       window.showErrorMessage(`Failed to parse JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -51,6 +54,8 @@ export function activate(context: ExtensionContext) {
     }
 
     const document = editor.document;
+    const filePath = document.fileName;
+    const fileName = path.basename(filePath);
 
     try {
       const content = document.getText();
@@ -81,9 +86,9 @@ export function activate(context: ExtensionContext) {
         console.warn("Log parsing errors:", errors);
       }
 
-      // Open the panel and send logs
-      LogLensPanel.render(context.extensionUri);
-      LogLensPanel.sendLogsToWebview(logs);
+      // Open the panel for this specific file and send logs
+      LogLensPanel.render(context.extensionUri, filePath);
+      LogLensPanel.sendLogsToWebview(filePath, logs, fileName);
 
     } catch (error) {
       window.showErrorMessage(`Failed to load log file: ${error instanceof Error ? error.message : 'Unknown error'}`);
