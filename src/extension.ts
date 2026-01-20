@@ -3,11 +3,6 @@ import { LogLensPanel } from "./panels/LogLensPanel";
 import * as path from "path";
 
 export function activate(context: ExtensionContext) {
-  // Create the show log lens command
-  const showLogLensCommand = commands.registerCommand("log-lens.show", () => {
-    LogLensPanel.render(context.extensionUri, "untitled");
-  });
-
   // Create the load current file command
   const loadCurrentFileCommand = commands.registerCommand("log-lens.loadCurrentFile", () => {
     const editor = window.activeTextEditor;
@@ -96,5 +91,5 @@ export function activate(context: ExtensionContext) {
   });
 
   // Add commands to the extension context
-  context.subscriptions.push(showLogLensCommand, loadCurrentFileCommand, loadLogFileCommand);
+  context.subscriptions.push(loadCurrentFileCommand, loadLogFileCommand);
 }

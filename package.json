@@ -17,10 +17,6 @@
   "contributes": {
     "commands": [
       {
-        "command": "log-lens.show",
-        "title": "Log Lens: Show"
-      },
-      {
         "command": "log-lens.loadCurrentFile",
         "title": "Log Lens: Load Current JSON File"
       },
