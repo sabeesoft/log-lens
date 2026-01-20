@@ -4,7 +4,7 @@ A powerful VS Code extension for viewing, filtering, and analyzing JSON log file
 
 ## Demo
 
-![Log Lens Demo](https://github.com/sabeesoft/log-lens/blob/main/assets/log-lens.gif)
+![Log Lens Demo](assets/log-lens.gif)
 
 ## Features
 
