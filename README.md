@@ -1,14 +1,10 @@
 # Log Lens
 
-A powerful VS Code extension for viewing, filtering, and analyzing JSON log files with real-time search, field visibility controls, and custom JavaScript transformations.
+A powerful VS Code extension for viewing, filtering, and analyzing JSON log files with real-time search, field visibility controls, and sorting capabilities.
 
-## Screenshots
+## Demo
 
-![Log Lens Overview](assets/1.png)
-
-![Filtering Logs](assets/2.png)
-
-![Expanded Log View](assets/3.png)
+![Log Lens Demo](assets/log-lens.gif)
 
 ## Features
 
@@ -70,7 +66,6 @@ npm run build:webview
 
 1. Open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P` on Mac)
 2. Type and select one of:
-   - **`Log Lens: Show`** - Opens the Log Lens panel
    - **`Log Lens: Load Current JSON File`** - Loads the currently open JSON file (array format) into Log Lens
    - **`Log Lens: Load Log File (NDJSON)`** - Loads newline-delimited JSON logs from a `.log` file
 
@@ -88,10 +83,6 @@ npm run build:webview
   {"level":"error","message":"Database connection failed","timestamp":"2024-01-15T10:30:00.000Z"}
   {"level":"info","message":"Server started","timestamp":"2024-01-15T10:30:01.000Z"}
   ```
-
-**Option 3: Use test data**
-- Run command: `Log Lens: Show`
-- The extension includes sample logs for testing
 
 ### Filtering Logs
 
@@ -215,4 +206,4 @@ This project is licensed under the [Apache-2.0 License](LICENSE).
 
 ## Support
 
-For bugs and feature requests, please create an issue on the [GitHub repository](https://github.com/sabolch/log-lens).
+For bugs and feature requests, please create an issue on the [GitHub repository](https://github.com/sabeesoft/log-lens).
