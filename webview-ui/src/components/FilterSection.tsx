@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, Plus } from 'lucide-react';
 import FilterRow from './FilterRow';
+import CollapsibleSection from './CollapsibleSection';
 import { Filter } from '../types';
 
 interface FilterSectionProps {
@@ -29,44 +30,33 @@ export default function FilterSection({
   onClear
 }: FilterSectionProps) {
   return (
-    <div
-      style={{
-        backgroundColor: '#111',
-        borderRadius: '6px',
-        border: '1px solid #222',
-        padding: '12px',
-        marginBottom: '8px'
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Search size={12} color="#60a5fa" />
-          <span style={{ fontSize: '10px', fontWeight: 600, color: '#a1a1aa', fontFamily: 'monospace' }}>
-            FILTERS
-          </span>
-        </div>
+    <CollapsibleSection
+      title="FILTERS"
+      icon={<Search size={12} />}
+      iconColor="#60a5fa"
+      headerRight={
         <button
           onClick={onAddFilter}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '4px',
-            padding: '4px 8px',
+            padding: '2px 6px',
             backgroundColor: '#222',
             color: '#a1a1aa',
             borderRadius: '4px',
             border: '1px solid #333',
             cursor: 'pointer',
-            fontSize: '11px',
+            fontSize: '10px',
             fontWeight: 500,
             fontFamily: 'monospace'
           }}
         >
-          <Plus size={12} />
+          <Plus size={10} />
           ADD
         </button>
-      </div>
-
+      }
+    >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         {filters.map((filter, index) => (
           <FilterRow
@@ -126,6 +116,6 @@ export default function FilterSection({
           </button>
         </div>
       </div>
-    </div>
+    </CollapsibleSection>
   );
 }

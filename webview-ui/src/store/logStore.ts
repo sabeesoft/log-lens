@@ -16,6 +16,8 @@ interface LogState {
   // UI state
   selectedLogIndex: number | null;
   visibleFields: string[];
+  settingsPanelOpen: boolean;
+  searchTerm: string;
 
   // Actions
   setLogs: (logs: LogEntry[]) => void;
@@ -35,6 +37,9 @@ interface LogState {
   selectLog: (index: number | null) => void;
   setVisibleFields: (fields: string[]) => void;
   toggleFieldVisibility: (field: string) => void;
+  toggleSettingsPanel: () => void;
+  setSettingsPanelOpen: (open: boolean) => void;
+  setSearchTerm: (term: string) => void;
 
   // Computed/derived state
   getFilteredLogs: () => LogEntry[];
@@ -54,6 +59,8 @@ export const useLogStore = create<LogState>((set, get) => ({
   orderByDirection: 'asc',
   selectedLogIndex: null,
   visibleFields: ['all'], // Default to showing all fields
+  settingsPanelOpen: false,
+  searchTerm: '',
 
   // Actions
   setLogs: (logs) => set({ logs }),
@@ -94,6 +101,12 @@ export const useLogStore = create<LogState>((set, get) => ({
 
   setVisibleFields: (fields) => set({ visibleFields: fields }),
 
+  toggleSettingsPanel: () => set((state) => ({ settingsPanelOpen: !state.settingsPanelOpen })),
+
+  setSettingsPanelOpen: (open) => set({ settingsPanelOpen: open }),
+
+  setSearchTerm: (term) => set({ searchTerm: term }),
+
   toggleFieldVisibility: (field) =>
     set((state) => {
       let visibleFields = [...state.visibleFields];
@@ -129,12 +142,24 @@ export const useLogStore = create<LogState>((set, get) => ({
 
   // Computed state
   getFilteredLogs: () => {
-    const { logs, appliedFilters, orderByField, orderByDirection } = get();
+    const { logs, appliedFilters, orderByField, orderByDirection, searchTerm } = get();
     let result = logs;
+
+    // Apply quick search term first (searches across all text content)
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      result = result.filter((log) => {
+        if (typeof log === 'string') {
+          return log.toLowerCase().includes(searchLower);
+        }
+        // For objects, search in the JSON stringified version
+        return JSON.stringify(log).toLowerCase().includes(searchLower);
+      });
+    }
 
     // Apply filters
     if (appliedFilters.length > 0) {
-      result = logs.filter((log) => {
+      result = result.filter((log) => {
         // For string logs, match against the entire string
         if (typeof log === 'string') {
           return appliedFilters.some((filter) => {
@@ -217,9 +242,14 @@ export const useLogStore = create<LogState>((set, get) => ({
   },
 
   getActiveSearchTerms: () => {
-    const { appliedFilters } = get();
-    return appliedFilters
+    const { appliedFilters, searchTerm } = get();
+    const terms = appliedFilters
       .filter((f) => f.field === 'message' && f.value && f.operator === 'contains')
       .map((f) => f.value);
+    // Include the quick search term for highlighting
+    if (searchTerm.trim()) {
+      terms.push(searchTerm.trim());
+    }
+    return terms;
   }
 }));

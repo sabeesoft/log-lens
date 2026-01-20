@@ -1,6 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { Filter } from '../types';
+import SearchableSelect from './SearchableSelect';
 
 interface FilterRowProps {
   filter: Filter;
@@ -73,27 +74,13 @@ export default function FilterRow({
         </div>
       )}
 
-      <select
+      <SearchableSelect
         value={filter.field}
-        onChange={(e) => onUpdate({ ...filter, field: e.target.value })}
-        style={{
-          minWidth: '100px',
-          flex: '1 1 120px',
-          maxWidth: '180px',
-          padding: '4px 8px',
-          backgroundColor: '#1a1a1a',
-          border: '1px solid #333',
-          borderRadius: '3px',
-          fontSize: '11px',
-          color: '#d4d4d8',
-          fontFamily: 'monospace'
-        }}
-      >
-        <option value="">field</option>
-        {allFields.map(field => (
-          <option key={field} value={field}>{field}</option>
-        ))}
-      </select>
+        options={allFields}
+        onChange={(field) => onUpdate({ ...filter, field })}
+        placeholder="field"
+        style={{ minWidth: '100px', flex: '1 1 120px', maxWidth: '180px' }}
+      />
 
       <select
         value={filter.operator}

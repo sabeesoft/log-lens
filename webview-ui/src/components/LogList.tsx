@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import { Search } from 'lucide-react';
 import LogRow from './LogRow';
@@ -25,59 +25,106 @@ export default function LogList({
   levelField,
   timestampField
 }: LogListProps) {
-  const [listHeight, setListHeight] = useState<number>(600);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const listRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const updateDimensions = useCallback(() => {
+    if (containerRef.current) {
+      const { width, height } = containerRef.current.getBoundingClientRect();
+      // Only update if dimensions actually changed to avoid unnecessary re-renders
+      setDimensions(prev => {
+        if (prev.width !== width || prev.height !== height) {
+          return { width, height };
+        }
+        return prev;
+      });
+    }
+  }, []);
+
   useEffect(() => {
-    const updateHeight = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const availableHeight = window.innerHeight - rect.top - 20;
-        setListHeight(Math.max(400, availableHeight));
-      }
+    // Initial dimension calculation with a small delay to ensure DOM is ready
+    const initialUpdate = () => {
+      updateDimensions();
+      // Double-check after a frame to catch any layout shifts
+      requestAnimationFrame(() => {
+        updateDimensions();
+      });
     };
 
-    updateHeight();
-    window.addEventListener('resize', updateHeight);
-    return () => window.removeEventListener('resize', updateHeight);
-  }, []);
+    initialUpdate();
+
+    // Use ResizeObserver for more reliable resize detection
+    const resizeObserver = new ResizeObserver(() => {
+      updateDimensions();
+    });
+
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    // Also listen to window resize as fallback
+    window.addEventListener('resize', updateDimensions);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateDimensions);
+    };
+  }, [updateDimensions]);
 
   if (logs.length === 0) {
     return (
       <div
         style={{
-          backgroundColor: '#111',
-          border: '1px solid #222',
-          padding: '24px',
-          textAlign: 'center',
-          borderRadius: '6px'
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#0a0a0a'
         }}
       >
-        <Search size={24} color="#333" style={{ margin: '0 auto 8px' }} />
-        <p style={{ color: '#71717a', fontSize: '12px', margin: 0, fontFamily: 'monospace' }}>no matches</p>
+        <Search size={32} color="#333" style={{ marginBottom: '12px' }} />
+        <p style={{ color: '#71717a', fontSize: '13px', margin: 0, fontFamily: 'monospace' }}>
+          No logs found
+        </p>
       </div>
     );
   }
 
   return (
-    <div ref={containerRef} style={{ paddingBottom: '16px' }}>
-      <List ref={listRef} height={listHeight} itemCount={logs.length} itemSize={28} width="100%">
-        {({ index, style }: any) => (
-          <div style={style}>
-            <LogRow
-              log={logs[index]}
-              isSelected={selectedLogIndex === index}
-              onClick={() => onSelectLog(index)}
-              activeSearchTerms={activeSearchTerms}
-              getLevelBorderColor={getLevelBorderColor}
-              visibleFields={visibleFields}
-              levelField={levelField}
-              timestampField={timestampField}
-            />
-          </div>
-        )}
-      </List>
+    <div
+      ref={containerRef}
+      style={{
+        flex: 1,
+        minHeight: 0,
+        overflow: 'hidden'
+      }}
+    >
+      {dimensions.height > 0 && (
+        <List
+          ref={listRef}
+          height={dimensions.height}
+          itemCount={logs.length}
+          itemSize={28}
+          width={dimensions.width || '100%'}
+        >
+          {({ index, style }: any) => (
+            <div style={style}>
+              <LogRow
+                log={logs[index]}
+                isSelected={selectedLogIndex === index}
+                onClick={() => onSelectLog(index)}
+                activeSearchTerms={activeSearchTerms}
+                getLevelBorderColor={getLevelBorderColor}
+                visibleFields={visibleFields}
+                levelField={levelField}
+                timestampField={timestampField}
+              />
+            </div>
+          )}
+        </List>
+      )}
     </div>
   );
 }

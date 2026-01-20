@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { X, Copy, Check } from 'lucide-react';
 import { LogEntry } from '../types';
 
@@ -8,6 +8,10 @@ interface SidebarProps {
 }
 
 type TabType = 'raw' | 'pretty' | 'tree';
+
+const MIN_WIDTH = 400;
+const MAX_WIDTH = 900;
+const DEFAULT_WIDTH = 550;
 
 const TreeNode = ({ value, nodeKey, depth }: { value: any; nodeKey: string | null; depth: number }) => {
   const [expanded, setExpanded] = useState(depth < 2);
@@ -72,6 +76,31 @@ const TreeNode = ({ value, nodeKey, depth }: { value: any; nodeKey: string | nul
 export default function Sidebar({ log, onClose }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<TabType>('pretty');
   const [copied, setCopied] = useState(false);
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [isResizing, setIsResizing] = useState(false);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+
+    const startX = e.clientX;
+    const startWidth = width;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const delta = startX - e.clientX;
+      const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + delta));
+      setWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [width]);
 
   if (!log) return null;
 
@@ -88,24 +117,57 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
     }
   };
 
-  const syntaxHighlight = (json: string) => {
-    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, (match) => {
-      let cls = '#d4d4d8'; // default
-      if (/^"/.test(match)) {
-        if (/:$/.test(match)) {
-          cls = '#60a5fa'; // key (blue)
-        } else {
-          cls = '#34d399'; // string (green)
-        }
-      } else if (/true|false/.test(match)) {
-        cls = '#f59e0b'; // boolean (orange)
-      } else if (/null/.test(match)) {
-        cls = '#71717a'; // null (gray)
-      } else {
-        cls = '#a78bfa'; // number (purple)
-      }
-      return `<span style="color: ${cls}">${match}</span>`;
-    });
+  // Render JSON manually with proper syntax highlighting (avoids VS Code CSP issues with dangerouslySetInnerHTML)
+  const renderPrettyJson = (obj: any, indent: number = 0): React.ReactNode[] => {
+    const spaces = '  '.repeat(indent);
+    const elements: React.ReactNode[] = [];
+
+    if (typeof obj !== 'object' || obj === null) {
+      const color = obj === null ? '#71717a' :
+                    typeof obj === 'string' ? '#34d399' :
+                    typeof obj === 'boolean' ? '#f59e0b' : '#a78bfa';
+      const display = typeof obj === 'string' ? `"${obj}"` : String(obj);
+      return [<span key="value" style={{ color }}>{display}</span>];
+    }
+
+    const isArray = Array.isArray(obj);
+    const entries = isArray ? obj.map((v, i) => [String(i), v]) : Object.entries(obj);
+    const openBracket = isArray ? '[' : '{';
+    const closeBracket = isArray ? ']' : '}';
+
+    elements.push(
+      <span key="open" style={{ color: '#71717a' }}>{openBracket}</span>
+    );
+
+    if (entries.length > 0) {
+      elements.push(<br key="open-br" />);
+
+      entries.forEach(([key, value], idx) => {
+        const childSpaces = '  '.repeat(indent + 1);
+        elements.push(
+          <span key={`line-${idx}`}>
+            {childSpaces}
+            {!isArray && (
+              <>
+                <span style={{ color: '#60a5fa' }}>"{key}"</span>
+                <span style={{ color: '#d4d4d8' }}>: </span>
+              </>
+            )}
+            {renderPrettyJson(value, indent + 1)}
+            {idx < entries.length - 1 && <span style={{ color: '#d4d4d8' }}>,</span>}
+            <br />
+          </span>
+        );
+      });
+
+      elements.push(<span key="close-spaces">{spaces}</span>);
+    }
+
+    elements.push(
+      <span key="close" style={{ color: '#71717a' }}>{closeBracket}</span>
+    );
+
+    return elements;
   };
 
   return (
@@ -130,7 +192,8 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
           position: 'fixed',
           top: 0,
           right: 0,
-          width: '500px',
+          width: `${width}px`,
+          maxWidth: '90vw',
           height: '100%',
           backgroundColor: '#0a0a0a',
           borderLeft: '1px solid #222',
@@ -141,6 +204,28 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
           boxShadow: '-4px 0 12px rgba(0, 0, 0, 0.5)'
         }}
       >
+        {/* Resize handle */}
+        <div
+          onMouseDown={handleMouseDown}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '6px',
+            height: '100%',
+            cursor: 'ew-resize',
+            backgroundColor: isResizing ? '#3b82f6' : 'transparent',
+            transition: 'background-color 0.15s',
+            zIndex: 10
+          }}
+          onMouseEnter={(e) => {
+            if (!isResizing) e.currentTarget.style.backgroundColor = '#333';
+          }}
+          onMouseLeave={(e) => {
+            if (!isResizing) e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+        />
+
         {/* Header */}
         <div
           style={{
@@ -249,10 +334,16 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
                 margin: 0,
                 lineHeight: '1.6',
                 whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word'
+                wordBreak: 'break-word',
+                color: '#d4d4d8'
               }}
-              dangerouslySetInnerHTML={{ __html: syntaxHighlight(jsonString) }}
-            />
+            >
+              {typeof log === 'string' ? (
+                <span style={{ color: '#34d399' }}>"{log}"</span>
+              ) : (
+                renderPrettyJson(log)
+              )}
+            </pre>
           )}
 
           {activeTab === 'tree' && (
