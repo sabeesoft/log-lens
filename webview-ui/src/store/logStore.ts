@@ -23,6 +23,10 @@ interface LogState {
   appliedSearchTerm: string;
   isFiltering: boolean;
 
+  // Field depth settings
+  fieldDepth: number;
+  appliedFieldDepth: number;
+
   // Actions
   setLogs: (logs: LogEntry[]) => void;
   setFileName: (fileName: string) => void;
@@ -47,6 +51,10 @@ interface LogState {
   setSearchTerm: (term: string) => void;
   triggerSearch: () => void;
 
+  // Field depth actions
+  setFieldDepth: (depth: number) => void;
+  applyFieldDepth: () => void;
+
   // Internal filter computation
   computeFilteredLogs: () => void;
 
@@ -56,6 +64,17 @@ interface LogState {
 
 const getNestedValue = (obj: any, path: string): any => {
   return path.split('.').reduce((curr, key) => curr?.[key], obj);
+};
+
+// Convert value to string for filtering - handles objects by stringifying them
+const valueToFilterString = (value: any): string => {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  if (typeof value === 'object') {
+    return JSON.stringify(value).toLowerCase();
+  }
+  return String(value).toLowerCase();
 };
 
 // Cache for stringified logs to avoid repeated JSON.stringify calls
@@ -86,6 +105,8 @@ export const useLogStore = create<LogState>((set, get) => ({
   searchTerm: '',
   appliedSearchTerm: '',
   isFiltering: false,
+  fieldDepth: 2,
+  appliedFieldDepth: 2,
 
   // Actions
   setLogs: (logs) => {
@@ -164,6 +185,10 @@ export const useLogStore = create<LogState>((set, get) => ({
     }));
     get().computeFilteredLogs();
   },
+
+  setFieldDepth: (depth) => set({ fieldDepth: depth }),
+
+  applyFieldDepth: () => set((state) => ({ appliedFieldDepth: state.fieldDepth })),
 
   toggleFieldVisibility: (field) =>
     set((state) => {
@@ -256,7 +281,8 @@ export const useLogStore = create<LogState>((set, get) => ({
 
             return processedGroups.some((group) => {
               return group.every((filter) => {
-                const logValue = String(getNestedValue(log, filter.field) || '').toLowerCase();
+                const rawValue = getNestedValue(log, filter.field);
+                const logValue = valueToFilterString(rawValue);
                 switch (filter.operator) {
                   case 'contains':
                     return logValue.includes(filter.valueLower);

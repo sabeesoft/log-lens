@@ -10,8 +10,11 @@ interface SidebarProps {
 type TabType = 'raw' | 'pretty' | 'tree';
 
 const MIN_WIDTH = 400;
-const MAX_WIDTH = 900;
-const DEFAULT_WIDTH = 550;
+const MAX_WIDTH_PERCENT = 75;
+const DEFAULT_WIDTH_PERCENT = 40;
+
+const getMaxWidth = () => Math.max(MIN_WIDTH, Math.floor(window.innerWidth * MAX_WIDTH_PERCENT / 100));
+const getDefaultWidth = () => Math.max(MIN_WIDTH, Math.floor(window.innerWidth * DEFAULT_WIDTH_PERCENT / 100));
 
 const TreeNode = ({ value, nodeKey, depth }: { value: any; nodeKey: string | null; depth: number }) => {
   const [expanded, setExpanded] = useState(depth < 2);
@@ -76,7 +79,7 @@ const TreeNode = ({ value, nodeKey, depth }: { value: any; nodeKey: string | nul
 export default function Sidebar({ log, onClose }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<TabType>('pretty');
   const [copied, setCopied] = useState(false);
-  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [width, setWidth] = useState(getDefaultWidth);
   const [isResizing, setIsResizing] = useState(false);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -88,7 +91,7 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
 
     const handleMouseMove = (e: MouseEvent) => {
       const delta = startX - e.clientX;
-      const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + delta));
+      const newWidth = Math.min(getMaxWidth(), Math.max(MIN_WIDTH, startWidth + delta));
       setWidth(newWidth);
     };
 

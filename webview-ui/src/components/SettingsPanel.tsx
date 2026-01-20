@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import FilterSection from './FilterSection';
 import OrderBySection from './OrderBySection';
 import FieldVisibilitySection from './FieldVisibilitySection';
+import FieldDepthSection from './FieldDepthSection';
 import { Filter } from '../types';
 
 interface SettingsPanelProps {
@@ -28,11 +29,19 @@ interface SettingsPanelProps {
   visibleFields: string[];
   onToggleFieldVisibility: (field: string) => void;
   onClearVisibleFields: () => void;
+  // Field depth props
+  fieldDepth: number;
+  appliedFieldDepth: number;
+  onFieldDepthChange: (depth: number) => void;
+  onApplyFieldDepth: () => void;
 }
 
 const MIN_WIDTH = 350;
-const MAX_WIDTH = 800;
-const DEFAULT_WIDTH = 480;
+const MAX_WIDTH_PERCENT = 75;
+const DEFAULT_WIDTH_PERCENT = 40;
+
+const getMaxWidth = () => Math.max(MIN_WIDTH, Math.floor(window.innerWidth * MAX_WIDTH_PERCENT / 100));
+const getDefaultWidth = () => Math.max(MIN_WIDTH, Math.floor(window.innerWidth * DEFAULT_WIDTH_PERCENT / 100));
 
 export default function SettingsPanel({
   isOpen,
@@ -53,9 +62,13 @@ export default function SettingsPanel({
   onOrderDirectionChange,
   visibleFields,
   onToggleFieldVisibility,
-  onClearVisibleFields
+  onClearVisibleFields,
+  fieldDepth,
+  appliedFieldDepth,
+  onFieldDepthChange,
+  onApplyFieldDepth
 }: SettingsPanelProps) {
-  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [width, setWidth] = useState(getDefaultWidth);
   const [isResizing, setIsResizing] = useState(false);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -67,7 +80,7 @@ export default function SettingsPanel({
 
     const handleMouseMove = (e: MouseEvent) => {
       const delta = startX - e.clientX;
-      const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + delta));
+      const newWidth = Math.min(getMaxWidth(), Math.max(MIN_WIDTH, startWidth + delta));
       setWidth(newWidth);
     };
 
@@ -206,6 +219,15 @@ export default function SettingsPanel({
               visibleFields={visibleFields}
               onToggleField={onToggleFieldVisibility}
               onClear={onClearVisibleFields}
+            />
+          </div>
+
+          <div style={{ marginTop: '8px' }}>
+            <FieldDepthSection
+              fieldDepth={fieldDepth}
+              appliedFieldDepth={appliedFieldDepth}
+              onDepthChange={onFieldDepthChange}
+              onApply={onApplyFieldDepth}
             />
           </div>
         </div>

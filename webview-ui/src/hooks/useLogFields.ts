@@ -1,15 +1,16 @@
 import { useMemo } from 'react';
 import { LogEntry } from '../types';
 
-export function useLogFields(logs: LogEntry[]) {
+export function useLogFields(logs: LogEntry[], maxDepth: number = 2) {
   const allFields = useMemo(() => {
     const fields = new Set<string>();
-    const addFields = (obj: any, prefix = '') => {
+    const addFields = (obj: any, prefix = '', currentDepth = 1) => {
       Object.keys(obj).forEach(key => {
         const fullKey = prefix ? `${prefix}.${key}` : key;
         fields.add(fullKey);
-        if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
-          addFields(obj[key], fullKey);
+        // Only recurse if we haven't reached max depth
+        if (currentDepth < maxDepth && typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+          addFields(obj[key], fullKey, currentDepth + 1);
         }
       });
     };
@@ -19,7 +20,7 @@ export function useLogFields(logs: LogEntry[]) {
       addFields(log);
     });
     return Array.from(fields).sort();
-  }, [logs]);
+  }, [logs, maxDepth]);
 
   return allFields;
 }

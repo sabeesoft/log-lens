@@ -21,6 +21,8 @@ export default function LogViewer() {
   const settingsPanelOpen = useLogStore((state) => state.settingsPanelOpen);
   const searchTerm = useLogStore((state) => state.searchTerm);
   const isFiltering = useLogStore((state) => state.isFiltering);
+  const fieldDepth = useLogStore((state) => state.fieldDepth);
+  const appliedFieldDepth = useLogStore((state) => state.appliedFieldDepth);
 
   const addFilter = useLogStore((state) => state.addFilter);
   const updateFilter = useLogStore((state) => state.updateFilter);
@@ -36,8 +38,10 @@ export default function LogViewer() {
   const setSearchTerm = useLogStore((state) => state.setSearchTerm);
   const triggerSearch = useLogStore((state) => state.triggerSearch);
   const getActiveSearchTerms = useLogStore((state) => state.getActiveSearchTerms);
+  const setFieldDepth = useLogStore((state) => state.setFieldDepth);
+  const applyFieldDepth = useLogStore((state) => state.applyFieldDepth);
 
-  const allFields = useLogFields(logs);
+  const allFields = useLogFields(logs, appliedFieldDepth);
   const activeSearchTerms = getActiveSearchTerms();
   const selectedLog = selectedLogIndex !== null ? filteredLogs[selectedLogIndex] : null;
 
@@ -116,6 +120,10 @@ export default function LogViewer() {
         visibleFields={visibleFields}
         onToggleFieldVisibility={toggleFieldVisibility}
         onClearVisibleFields={() => setVisibleFields(['all'])}
+        fieldDepth={fieldDepth}
+        appliedFieldDepth={appliedFieldDepth}
+        onFieldDepthChange={setFieldDepth}
+        onApplyFieldDepth={applyFieldDepth}
       />
 
       {/* Log Details Sidebar */}

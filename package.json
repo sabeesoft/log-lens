@@ -2,7 +2,7 @@
   "name": "log-lens",
   "displayName": "Log lens",
   "description": "Log lens a simple local tool to visualize JSON logs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "sabeesoft",
   "icon": "assets/icon.png",
   "license": "Apache-2.0",
