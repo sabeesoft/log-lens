@@ -3,6 +3,31 @@ import { LogEntry } from '../types';
 const LEVEL_FIELD_CANDIDATES = ['level', 'severity', 'priority', 'logLevel', 'log_level'];
 const TIMESTAMP_FIELD_CANDIDATES = ['timestamp', 'time', 'date', '@timestamp', 'datetime', 'created_at', 'createdAt'];
 
+// Numeric log levels (Bunyan/Pino style)
+const NUMERIC_LEVEL_MAP: Record<number, string> = {
+  10: 'trace',
+  20: 'debug',
+  30: 'info',
+  40: 'warn',
+  50: 'error',
+  60: 'fatal',
+};
+
+/**
+ * Normalizes a log level value to a standard string level.
+ * Handles: "info", 30, "30", etc.
+ */
+function normalizeLogLevel(value: unknown): string {
+  // Handle numeric levels (as number or string)
+  const numValue = typeof value === 'number' ? value : parseInt(String(value), 10);
+  if (!isNaN(numValue) && numValue in NUMERIC_LEVEL_MAP) {
+    return NUMERIC_LEVEL_MAP[numValue];
+  }
+
+  // Return as lowercase string
+  return String(value).toLowerCase();
+}
+
 /**
  * Auto-detects the level field from a log entry
  */
@@ -37,13 +62,13 @@ export function getLogLevel(log: LogEntry, configuredField: string): string {
 
   // Use configured field if provided
   if (configuredField && configuredField in log) {
-    return String(log[configuredField]).toLowerCase();
+    return normalizeLogLevel(log[configuredField]);
   }
 
   // Auto-detect
   const autoField = autoDetectLevelField(log);
   if (autoField) {
-    return String(log[autoField]).toLowerCase();
+    return normalizeLogLevel(log[autoField]);
   }
 
   // Default to 'info' if not found
