@@ -8,12 +8,26 @@ export default defineConfig({
   build: {
     outDir: "build",
     rollupOptions: {
+      onwarn(warning, warn) {
+        // Suppress "use client" directive warnings from @xyflow/react
+        if (warning.code === 'MODULE_LEVEL_DIRECTIVE' && warning.message.includes('"use client"')) {
+          return;
+        }
+        warn(warning);
+      },
       output: {
         entryFileNames: "assets/[name].js",
         chunkFileNames: "assets/[name].js",
         assetFileNames: "assets/[name].[ext]",
       },
     },
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true,
+    },
+  },
+  optimizeDeps: {
+    include: ["@dagrejs/dagre", "@dagrejs/graphlib"],
   },
   resolve: {
     alias: {

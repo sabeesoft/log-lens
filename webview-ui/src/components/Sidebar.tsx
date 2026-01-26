@@ -1,13 +1,15 @@
-import React, { useState, useCallback } from 'react';
-import { X, Copy, Check } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { X, Copy, Check, ExternalLink } from 'lucide-react';
 import { LogEntry } from '../types';
+import { useLogStore } from '../store/logStore';
+import { detectTraceIdField, getTraceIdValue } from '../utils/traceUtils';
 
 interface SidebarProps {
   log: LogEntry | null;
   onClose: () => void;
 }
 
-type TabType = 'raw' | 'pretty' | 'tree';
+type TabType = 'raw' | 'pretty' | 'tree' | 'trace';
 
 const MIN_WIDTH = 400;
 const MAX_WIDTH_PERCENT = 75;
@@ -81,6 +83,23 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
   const [copied, setCopied] = useState(false);
   const [width, setWidth] = useState(getDefaultWidth);
   const [isResizing, setIsResizing] = useState(false);
+
+  // Get logs and openTraceModal from store
+  const logs = useLogStore((state) => state.logs);
+  const openTraceModal = useLogStore((state) => state.openTraceModal);
+
+  // Detect trace ID field and get value from current log
+  const traceIdField = detectTraceIdField(logs);
+  const currentTraceId = log && traceIdField ? getTraceIdValue(log, traceIdField) : null;
+
+  // Get related logs with the same trace ID
+  const traceLogs = currentTraceId
+    ? logs.filter((l) => {
+        if (typeof l === 'string') return false;
+        const logTraceId = getTraceIdValue(l, traceIdField!);
+        return logTraceId === currentTraceId;
+      })
+    : [];
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -309,6 +328,26 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
               {tab}
             </button>
           ))}
+          {currentTraceId && (
+            <button
+              onClick={() => setActiveTab('trace')}
+              style={{
+                background: 'none',
+                border: 'none',
+                borderBottom: activeTab === 'trace' ? '2px solid #60a5fa' : '2px solid transparent',
+                cursor: 'pointer',
+                padding: '8px 12px',
+                color: activeTab === 'trace' ? '#60a5fa' : '#71717a',
+                fontSize: '11px',
+                fontWeight: 600,
+                fontFamily: 'monospace',
+                textTransform: 'uppercase',
+                transition: 'all 0.2s'
+              }}
+            >
+              trace ({traceLogs.length})
+            </button>
+          )}
         </div>
 
         {/* Content */}
@@ -356,6 +395,91 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
               ) : (
                 <TreeNode value={log} nodeKey={null} depth={0} />
               )}
+            </div>
+          )}
+
+          {activeTab === 'trace' && currentTraceId && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Trace ID */}
+              <div
+                style={{
+                  padding: '12px 16px',
+                  backgroundColor: '#111',
+                  borderRadius: '8px',
+                  border: '1px solid #222'
+                }}
+              >
+                <div style={{ marginBottom: '6px' }}>
+                  <span style={{ color: '#71717a', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase' }}>Trace ID</span>
+                </div>
+                <div style={{ color: '#60a5fa', fontSize: '12px', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                  {currentTraceId}
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div
+                  style={{
+                    flex: 1,
+                    padding: '16px 12px',
+                    backgroundColor: '#111',
+                    borderRadius: '8px',
+                    border: '1px solid #222',
+                    textAlign: 'center'
+                  }}
+                >
+                  <div style={{ color: '#f3f4f6', fontSize: '24px', fontWeight: 600, fontFamily: 'monospace' }}>
+                    {traceLogs.length}
+                  </div>
+                  <div style={{ color: '#71717a', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', marginTop: '4px' }}>
+                    Logs
+                  </div>
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    padding: '16px 12px',
+                    backgroundColor: '#111',
+                    borderRadius: '8px',
+                    border: '1px solid #222',
+                    textAlign: 'center'
+                  }}
+                >
+                  <div style={{ color: '#f3f4f6', fontSize: '24px', fontWeight: 600, fontFamily: 'monospace' }}>
+                    {new Set(traceLogs.filter(l => typeof l !== 'string').map(l => (l as any).service)).size}
+                  </div>
+                  <div style={{ color: '#71717a', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', marginTop: '4px' }}>
+                    Services
+                  </div>
+                </div>
+              </div>
+
+              {/* View Trace Button */}
+              <button
+                onClick={() => openTraceModal(currentTraceId, traceLogs)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '14px 16px',
+                  backgroundColor: '#3b82f6',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  fontFamily: 'monospace',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+              >
+                <ExternalLink size={14} />
+                VIEW SERVICE MAP
+              </button>
             </div>
           )}
         </div>

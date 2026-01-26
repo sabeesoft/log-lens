@@ -32,6 +32,20 @@ A powerful VS Code extension for viewing, filtering, and analyzing JSON log file
 - **Ascending/descending** - Toggle sort direction with a single click
 - **Type-aware sorting** - Intelligent sorting for strings, numbers, and dates
 
+### 🔗 Distributed Trace Visualization
+- **Service map graph** - Visual representation of service-to-service communication using React Flow
+- **Auto-detection** - Automatically identifies trace fields (trace_id, span_id, parent_span_id, service)
+- **Interactive nodes** - Click on service nodes to filter logs by service
+- **Status indicators** - Color-coded nodes showing healthy (green), warnings (yellow), and errors (red)
+- **Resizable panels** - Adjustable split between graph view and log list
+- **Reset view** - One-click reset to restore original graph layout and clear filters
+
+### 📝 Log Details Sidebar
+- **Multiple view modes** - Raw, Pretty (syntax-highlighted), and Tree (collapsible) views
+- **Resizable sidebar** - Drag to adjust sidebar width
+- **Copy to clipboard** - Quick copy of log entry data
+- **Overlay mode** - Sidebar overlays content without pushing the layout
+
 ### 🎨 User Interface
 - **Dark theme** - Developer-friendly dark interface with monospace fonts
 - **Compact design** - Space-efficient UI with collapsible sections
@@ -105,6 +119,21 @@ npm run build:webview
 2. Click field badges to toggle visibility
 3. Green = visible, Gray = hidden
 
+### Viewing Distributed Traces
+
+1. Select a log entry that contains trace information (trace_id, span_id, etc.)
+2. Open the **Details sidebar** on the right
+3. Navigate to the **"Trace"** tab
+4. Click **"VIEW SERVICE MAP"** to open the trace visualization
+5. In the trace view:
+   - **Top panel**: Service graph showing communication flow
+   - **Bottom panel**: Log entries for the trace
+   - Click on a **service node** to filter logs by that service
+   - Use **"CLEAR FILTER"** to remove the service filter
+   - Use **"RESET VIEW"** to restore the original graph layout
+   - Drag the **resize handle** between panels to adjust the split
+   - Click a **log entry** to view details in the sidebar
+
 ## Supported Log Formats
 
 Log Lens works with any JSON log format. Common formats include:
@@ -139,8 +168,21 @@ Log Lens works with any JSON log format. Common formats include:
 }
 ```
 
+**Distributed trace logs:**
+```json
+{
+  "level": "info",
+  "message": "Processing order",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "trace_id": "trace_abc123",
+  "span_id": "span_001",
+  "parent_span_id": null,
+  "service": "api-gateway"
+}
+```
+
 **Custom formats:**
-Log Lens automatically detects common field names and patterns.
+Log Lens automatically detects common field names and patterns, including trace fields like `trace_id`, `traceId`, `span_id`, `spanId`, `parent_span_id`, `parentSpanId`, `service`, and `serviceName`.
 
 ## Development
 
@@ -170,6 +212,8 @@ log-lens/
 - **TypeScript** - Type-safe development
 - **Zustand** - Lightweight state management
 - **react-window** - Virtualized list rendering for performance
+- **@xyflow/react** - Interactive node-based graph visualization
+- **@dagrejs/dagre** - Directed graph layout algorithm
 - **Vite** - Fast development and build tooling
 - **Lucide React** - Icon library
 

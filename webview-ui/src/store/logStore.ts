@@ -27,6 +27,11 @@ interface LogState {
   fieldDepth: number;
   appliedFieldDepth: number;
 
+  // Trace modal state
+  traceModalOpen: boolean;
+  activeTraceId: string | null;
+  traceLogs: LogEntry[];
+
   // Actions
   setLogs: (logs: LogEntry[]) => void;
   setFileName: (fileName: string) => void;
@@ -54,6 +59,10 @@ interface LogState {
   // Field depth actions
   setFieldDepth: (depth: number) => void;
   applyFieldDepth: () => void;
+
+  // Trace modal actions
+  openTraceModal: (traceId: string, traceLogs: LogEntry[]) => void;
+  closeTraceModal: () => void;
 
   // Internal filter computation
   computeFilteredLogs: () => void;
@@ -107,6 +116,11 @@ export const useLogStore = create<LogState>((set, get) => ({
   isFiltering: false,
   fieldDepth: 2,
   appliedFieldDepth: 2,
+
+  // Trace modal state
+  traceModalOpen: false,
+  activeTraceId: null,
+  traceLogs: [],
 
   // Actions
   setLogs: (logs) => {
@@ -189,6 +203,19 @@ export const useLogStore = create<LogState>((set, get) => ({
   setFieldDepth: (depth) => set({ fieldDepth: depth }),
 
   applyFieldDepth: () => set((state) => ({ appliedFieldDepth: state.fieldDepth })),
+
+  // Trace modal actions
+  openTraceModal: (traceId, traceLogs) => set({
+    traceModalOpen: true,
+    activeTraceId: traceId,
+    traceLogs
+  }),
+
+  closeTraceModal: () => set({
+    traceModalOpen: false,
+    activeTraceId: null,
+    traceLogs: []
+  }),
 
   toggleFieldVisibility: (field) =>
     set((state) => {

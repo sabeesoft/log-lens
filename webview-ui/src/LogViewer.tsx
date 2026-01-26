@@ -3,6 +3,7 @@ import SettingsPanel from './components/SettingsPanel';
 import LogList from './components/LogList';
 import Sidebar from './components/Sidebar';
 import LoadingOverlay from './components/LoadingOverlay';
+import TraceModal from './components/TraceModal';
 import { useLogFields } from './hooks/useLogFields';
 import { getLevelBorderColor } from './utils/logUtils';
 import { useLogStore } from './store/logStore';
@@ -40,6 +41,10 @@ export default function LogViewer() {
   const getActiveSearchTerms = useLogStore((state) => state.getActiveSearchTerms);
   const setFieldDepth = useLogStore((state) => state.setFieldDepth);
   const applyFieldDepth = useLogStore((state) => state.applyFieldDepth);
+  const traceModalOpen = useLogStore((state) => state.traceModalOpen);
+  const activeTraceId = useLogStore((state) => state.activeTraceId);
+  const traceLogs = useLogStore((state) => state.traceLogs);
+  const closeTraceModal = useLogStore((state) => state.closeTraceModal);
 
   const allFields = useLogFields(logs, appliedFieldDepth);
   const activeSearchTerms = getActiveSearchTerms();
@@ -128,6 +133,15 @@ export default function LogViewer() {
 
       {/* Log Details Sidebar */}
       {selectedLog && <Sidebar log={selectedLog} onClose={() => selectLog(null)} />}
+
+      {/* Trace Modal */}
+      {traceModalOpen && activeTraceId && (
+        <TraceModal
+          traceId={activeTraceId}
+          traceLogs={traceLogs}
+          onClose={closeTraceModal}
+        />
+      )}
     </div>
   );
 }

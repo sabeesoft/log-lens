@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { LogEntry } from '../types';
 import { getLogLevel, getLogTimestamp } from '../utils/fieldMapping';
 
