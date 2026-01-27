@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { X, Copy, Check, ExternalLink } from 'lucide-react';
 import { LogEntry } from '../types';
 import { useLogStore } from '../store/logStore';
-import { detectTraceIdField, getTraceIdValue } from '../utils/traceUtils';
+import { getTraceIdValue, detectTraceConfig, getServiceValue } from '../utils/traceUtils';
 
 interface SidebarProps {
   log: LogEntry | null;
@@ -88,15 +88,16 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
   const logs = useLogStore((state) => state.logs);
   const openTraceModal = useLogStore((state) => state.openTraceModal);
 
-  // Detect trace ID field and get value from current log
-  const traceIdField = detectTraceIdField(logs);
-  const currentTraceId = log && traceIdField ? getTraceIdValue(log, traceIdField) : null;
+  // Detect trace config and get value from current log
+  const traceConfig = detectTraceConfig(logs);
+  const traceIdField = traceConfig.traceIdField;
+  const currentTraceId = log ? getTraceIdValue(log, traceIdField) : null;
 
   // Get related logs with the same trace ID
   const traceLogs = currentTraceId
     ? logs.filter((l) => {
         if (typeof l === 'string') return false;
-        const logTraceId = getTraceIdValue(l, traceIdField!);
+        const logTraceId = getTraceIdValue(l, traceIdField);
         return logTraceId === currentTraceId;
       })
     : [];
@@ -447,7 +448,7 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
                   }}
                 >
                   <div style={{ color: '#f3f4f6', fontSize: '24px', fontWeight: 600, fontFamily: 'monospace' }}>
-                    {new Set(traceLogs.filter(l => typeof l !== 'string').map(l => (l as any).service)).size}
+                    {new Set(traceLogs.filter(l => typeof l !== 'string').map(l => getServiceValue(l, traceConfig.serviceNameField)).filter(Boolean)).size}
                   </div>
                   <div style={{ color: '#71717a', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', marginTop: '4px' }}>
                     Services

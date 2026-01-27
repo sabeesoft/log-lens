@@ -17,7 +17,7 @@ import dagre from '@dagrejs/dagre';
 import { X, AlertCircle, AlertTriangle, Activity, Clock, Copy, Check, RotateCcw } from 'lucide-react';
 import LogRow from './LogRow';
 import { LogEntry } from '../types';
-import { buildServiceGraph, detectTraceConfig, ServiceNode as ServiceNodeData } from '../utils/traceUtils';
+import { buildServiceGraph, detectTraceConfig, ServiceNode as ServiceNodeData, getServiceValue } from '../utils/traceUtils';
 import { getLevelBorderColor } from '../utils/logUtils';
 
 interface TraceModalProps {
@@ -312,7 +312,7 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
     if (!selectedService) return traceLogs;
     return traceLogs.filter(log => {
       if (typeof log === 'string') return false;
-      return log[traceConfig.serviceNameField] === selectedService;
+      return getServiceValue(log, traceConfig.serviceNameField) === selectedService;
     });
   }, [selectedService, traceLogs, traceConfig.serviceNameField]);
 

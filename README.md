@@ -35,6 +35,7 @@ A powerful VS Code extension for viewing, filtering, and analyzing JSON log file
 ### 🔗 Distributed Trace Visualization
 - **Service map graph** - Visual representation of service-to-service communication using React Flow
 - **Auto-detection** - Automatically identifies trace fields (trace_id, span_id, parent_span_id, service)
+- **Nested field support** - Detects trace fields inside containers like `@message` (AWS CloudWatch compatible)
 - **Interactive nodes** - Click on service nodes to filter logs by service
 - **Status indicators** - Color-coded nodes showing healthy (green), warnings (yellow), and errors (red)
 - **Resizable panels** - Adjustable split between graph view and log list
@@ -181,8 +182,23 @@ Log Lens works with any JSON log format. Common formats include:
 }
 ```
 
+**AWS CloudWatch logs (with nested @message):**
+```json
+{
+  "@timestamp": "2024-01-15T10:30:00.000Z",
+  "@logStream": "app-server-01",
+  "@message": {
+    "level": "info",
+    "message": "Processing request",
+    "trace_id": "trace_abc123",
+    "span_id": "span_001",
+    "service": "api-gateway"
+  }
+}
+```
+
 **Custom formats:**
-Log Lens automatically detects common field names and patterns, including trace fields like `trace_id`, `traceId`, `span_id`, `spanId`, `parent_span_id`, `parentSpanId`, `service`, and `serviceName`.
+Log Lens automatically detects common field names and patterns, including trace fields like `trace_id`, `traceId`, `span_id`, `spanId`, `parent_span_id`, `parentSpanId`, `service`, `serviceName`, and `service.name`. These fields are also detected when nested inside container fields like `@message`, `message`, `data`, `body`, or `payload` (common in AWS CloudWatch and similar log aggregators).
 
 ## Development
 
