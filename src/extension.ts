@@ -1,5 +1,6 @@
 import { commands, ExtensionContext, window } from "vscode";
 import { LogLensPanel } from "./panels/LogLensPanel";
+import { parseCsvContent } from "./parsers/csvParser";
 import * as path from "path";
 
 export function activate(context: ExtensionContext) {
@@ -90,6 +91,47 @@ export function activate(context: ExtensionContext) {
     }
   });
 
+  // Create the load CSV file command
+  const loadCsvFileCommand = commands.registerCommand("log-lens.loadCsvFile", () => {
+    const editor = window.activeTextEditor;
+    if (!editor) {
+      window.showWarningMessage("No active editor found. Please open a CSV file.");
+      return;
+    }
+
+    const document = editor.document;
+    const filePath = document.fileName;
+    const fileName = path.basename(filePath);
+
+    if (!document.fileName.endsWith('.csv')) {
+      window.showWarningMessage("Please open a CSV file.");
+      return;
+    }
+
+    try {
+      const content = document.getText();
+      const result = parseCsvContent(content);
+
+      if (result.logs.length === 0) {
+        window.showErrorMessage("No valid data rows found in the CSV file.");
+        return;
+      }
+
+      if (result.errors.length > 0) {
+        window.showWarningMessage(
+          `Loaded ${result.logs.length} rows, but ${result.errors.length} row(s) had parsing issues. Check the console for details.`
+        );
+        console.warn("CSV parsing issues:", result.errors);
+      }
+
+      LogLensPanel.render(context.extensionUri, filePath);
+      LogLensPanel.sendLogsToWebview(filePath, result.logs, fileName);
+
+    } catch (error) {
+      window.showErrorMessage(`Failed to parse CSV: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  });
+
   // Add commands to the extension context
-  context.subscriptions.push(loadCurrentFileCommand, loadLogFileCommand);
+  context.subscriptions.push(loadCurrentFileCommand, loadLogFileCommand, loadCsvFileCommand);
 }

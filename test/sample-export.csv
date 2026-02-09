@@ -1,0 +1,7 @@
+key,value,headers,timestamp,offset,ingestion_year,ingestion_month,ingestion_day
+f32e7986-a851-484d-b779-02de4488a009,"{id=uuid-001, asof=2025-12-15T12:22:30.163Z, flags={ismfszh=false, isdebtor=true}, history=[{cutomerid=125464, displayname=null}], data=[1235]}","{testheader=somevalue}",1770669892,63010,2026,02,15
+aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee,"{id=uuid-002, asof=2025-12-16T08:00:00.000Z, flags={ismfszh=true, isdebtor=false}, history=[{cutomerid=999888, displayname=John Doe}], data=[42, 99]}","{content-type=application/json, x-request-id=abc-123}",1770756292,63011,2026,02,16
+11111111-2222-3333-4444-555555555555,"{id=uuid-003, simple=value, nested={deep={level=3}}, emptylist=[], status=null}","{testheader=anothervalue}",1770842692,63012,2026,02,17
+cccccccc-dddd-eeee-ffff-000000000000,"{id=uuid-004, tags=[active, verified, premium], count=0, active=true}","{}",1770929092,63013,2026,02,18
+bad-parse-row,"{broken={unclosed","{valid=header}",1770929092,63014,2026,02,18
+empty-value-row,,,,0,2026,02,19
