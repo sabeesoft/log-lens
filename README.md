@@ -1,6 +1,6 @@
 # Log Lens
 
-A powerful VS Code extension for viewing, filtering, and analyzing JSON log files with real-time search, field visibility controls, and sorting capabilities.
+A powerful VS Code extension for viewing, filtering, and analyzing log files with real-time search, field visibility controls, and sorting capabilities. Supports JSON, NDJSON, and CSV formats (including AWS Athena exports with Java-style notation).
 
 ## Demo
 
@@ -83,6 +83,7 @@ npm run build:webview
 2. Type and select one of:
    - **`Log Lens: Load Current JSON File`** - Loads the currently open JSON file (array format) into Log Lens
    - **`Log Lens: Load Log File (NDJSON)`** - Loads newline-delimited JSON logs from a `.log` file
+   - **`Log Lens: Load CSV File`** - Loads a CSV file (e.g., AWS Athena exports) into Log Lens
 
 ### Loading Logs
 
@@ -97,6 +98,18 @@ npm run build:webview
   ```
   {"level":"error","message":"Database connection failed","timestamp":"2024-01-15T10:30:00.000Z"}
   {"level":"info","message":"Server started","timestamp":"2024-01-15T10:30:01.000Z"}
+  ```
+
+**Option 3: Load from CSV file (AWS Athena exports)**
+- Open a `.csv` file exported from AWS Athena or similar data lake tools
+- Run command: `Log Lens: Load CSV File`
+- Columns are auto-detected from the CSV header row
+- Columns containing Java-style notation (`{key=value, nested={...}}`) are automatically parsed into structured objects
+- Unix epoch timestamps (seconds or milliseconds) are auto-converted to ISO 8601
+- Example format:
+  ```csv
+  key,value,headers,timestamp,offset
+  f32e7986-...,"{id=uuid, flags={isdebtor=true}, data=[1235]}","{testheader=somevalue}",1770669892,63010
   ```
 
 ### Filtering Logs
@@ -197,6 +210,13 @@ Log Lens works with any JSON log format. Common formats include:
 }
 ```
 
+**CSV with Java-style notation (AWS Athena exports):**
+```csv
+key,value,headers,timestamp,offset,ingestion_year,ingestion_month,ingestion_day
+f32e7986-a851-...,"{id=uuid-001, flags={ismfszh=false, isdebtor=true}, history=[{cutomerid=125464, displayname=null}], data=[1235]}","{testheader=somevalue}",1770669892,63010,2026,02,15
+```
+The Java-style `{key=value}` notation (common in data lake snapshots from Kafka, etc.) is automatically parsed into structured objects with full support for nested objects, arrays, booleans, nulls, and numbers. Columns are flexible and auto-detected from the header row.
+
 **Custom formats:**
 Log Lens automatically detects common field names and patterns, including trace fields like `trace_id`, `traceId`, `span_id`, `spanId`, `parent_span_id`, `parentSpanId`, `service`, `serviceName`, and `service.name`. These fields are also detected when nested inside container fields like `@message`, `message`, `data`, `body`, or `payload` (common in AWS CloudWatch and similar log aggregators).
 
@@ -208,8 +228,12 @@ Log Lens automatically detects common field names and patterns, including trace 
 log-lens/
 ├── src/                        # Extension source code
 │   ├── extension.ts           # Extension entry point
-│   └── panels/
-│       └── LogLensPanel.ts    # Webview panel manager
+│   ├── panels/
+│   │   └── LogLensPanel.ts    # Webview panel manager
+│   └── parsers/               # File format parsers
+│       ├── csvParser.ts       # CSV parsing orchestrator
+│       ├── javaNotationParser.ts # Java-style {key=value} parser
+│       └── timestampUtils.ts  # Unix epoch timestamp detection
 ├── webview-ui/                # React webview UI
 │   ├── src/
 │   │   ├── components/        # React components
@@ -218,6 +242,8 @@ log-lens/
 │   │   ├── utils/            # Utility functions
 │   │   └── types.ts          # TypeScript types
 │   └── package.json
+├── test/                       # Test fixtures
+│   └── sample-athena-export.csv
 └── package.json
 ```
 
@@ -230,6 +256,7 @@ log-lens/
 - **react-window** - Virtualized list rendering for performance
 - **@xyflow/react** - Interactive node-based graph visualization
 - **@dagrejs/dagre** - Directed graph layout algorithm
+- **csv-parse** - RFC 4180 CSV parsing
 - **Vite** - Fast development and build tooling
 - **Lucide React** - Icon library
 

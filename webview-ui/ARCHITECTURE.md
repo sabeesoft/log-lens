@@ -130,6 +130,9 @@ App
 - No required fields - works with varying log structures
 - Gracefully displays logs missing standard fields
 - Supports mixing different log formats in same dataset
+- **CSV support** - Parses CSV files (e.g., AWS Athena exports) with auto-detected headers
+- **Java-style notation parser** - Recursively parses `{key=value, nested={...}, array=[...]}` notation from data lake snapshots
+- **Smart type detection** - Auto-converts timestamps, numbers, booleans, and nulls from string values
 
 ### 2. Advanced Filtering
 - Multiple filters with AND/OR logic
@@ -176,6 +179,39 @@ LogViewer
     ↓ (props)
 Components
 ```
+
+### CSV Data Flow (Extension Host Side)
+```
+CSV file (.csv)
+    ↓ csv-parse (auto-detect headers from first row)
+Raw row objects (Record<string, string>[])
+    ↓ per-column smart detection
+    ├── Timestamp column? → normalizeTimestamp() (epoch → ISO 8601)
+    ├── Starts with { or [? → parseJavaNotation() (recursive descent parser)
+    ├── Numeric? → Number()
+    ├── "true"/"false"? → boolean
+    ├── "null" or empty? → null
+    └── Otherwise → keep as string
+    ↓
+LogEntry[] → postMessage → webview (format-agnostic, no webview changes needed)
+```
+
+### Java-Style Notation Parser
+Handles Java `toString()` output commonly found in data lake exports (Kafka snapshots, AWS Athena):
+```
+Grammar:
+  Value       ::= Object | Array | Primitive
+  Object      ::= '{' (Key '=' Value (',' Key '=' Value)*)? '}'
+  Array       ::= '[' (Value (',' Value)*)? ']'
+  Primitive   ::= 'null' | 'true' | 'false' | Number | String
+
+Example:
+  Input:  {id=uuid, flags={isdebtor=true}, history=[{cutomerid=125464, displayname=null}]}
+  Output: {id: "uuid", flags: {isdebtor: true}, history: [{cutomerid: 125464, displayname: null}]}
+```
+
+Disambiguates `{key=value}` (object) vs `{val1, val2}` (Java Set → array) by lookahead for `=`.
+On parse failure, gracefully falls back to the raw string.
 
 ### Filter Flow
 1. User edits filters → Updates `filters` state (draft)
@@ -232,8 +268,8 @@ interface Filter {
 - **Time range filters** - Filter by timestamp range
 - **Column view** - Table-based log display
 - **Themes** - Light mode option
-- **Keyboard shortcuts** - Power user features
 - **Live tail** - Auto-scroll for new logs
+- **Additional CSV value formats** - Support for more serialization formats beyond Java notation
 
 ### Performance Improvements
 - **Web Workers** - Offload filtering to background thread
@@ -266,13 +302,24 @@ The webview communicates with the VSCode extension via messages:
 
 **Incoming:**
 ```typescript
-{ type: "updateLogs", logs: LogEntry[] }
+{ type: "updateLogs", logs: LogEntry[], fileName: string }
 ```
 
 **Outgoing:**
 ```typescript
 { type: "requestLogs" }
+{ type: "transform", script: string, logs: LogEntry[] }
 ```
+
+### Extension-Side Parsers (`src/parsers/`)
+
+| File | Purpose |
+|------|---------|
+| `csvParser.ts` | CSV parsing orchestrator using `csv-parse/sync`, applies per-column transforms |
+| `javaNotationParser.ts` | Recursive descent parser for Java `toString()` notation (`{key=value}`) |
+| `timestampUtils.ts` | Detects timestamp columns by name and converts unix epoch to ISO 8601 |
+
+All parsing happens on the extension host (Node.js) side. The webview receives clean `LogEntry[]` objects and is completely format-agnostic.
 
 ## Conclusion
 
