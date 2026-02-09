@@ -1,4 +1,3 @@
-import React from 'react';
 import { Search, Plus } from 'lucide-react';
 import FilterRow from './FilterRow';
 import CollapsibleSection from './CollapsibleSection';

@@ -86,13 +86,6 @@ export class LogLensPanel {
   }
 
   /**
-   * Gets the panel for a specific file path
-   */
-  public static getPanel(filePath: string): LogLensPanel | undefined {
-    return LogLensPanel.panels.get(filePath);
-  }
-
-  /**
    * Sends logs to the webview for a specific file
    *
    * @param filePath The file path to send logs to
@@ -196,12 +189,6 @@ export class LogLensPanel {
             // Execute transform script and send results back
             this._executeTransform(webview, message.script, message.logs);
             return;
-          case "hello":
-            // Code that should run in response to the hello message command
-            window.showInformationMessage(message.text);
-            return;
-          // Add more switch case statements here as more webview message commands
-          // are created within the webview context (i.e. inside media/main.js)
         }
       },
       undefined,

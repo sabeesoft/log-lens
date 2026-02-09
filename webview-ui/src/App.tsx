@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import LogViewer from "./LogViewer";
 import { useLogStore } from "./store/logStore";
 

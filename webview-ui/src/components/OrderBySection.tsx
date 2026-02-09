@@ -1,4 +1,3 @@
-import React from 'react';
 import { ArrowUpDown } from 'lucide-react';
 import CollapsibleSection from './CollapsibleSection';
 import SearchableSelect from './SearchableSelect';

@@ -1,4 +1,3 @@
-import React from 'react';
 import { X } from 'lucide-react';
 import { Filter } from '../types';
 import SearchableSelect from './SearchableSelect';

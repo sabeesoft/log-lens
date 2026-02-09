@@ -52,7 +52,6 @@ interface LogState {
   setVisibleFields: (fields: string[]) => void;
   toggleFieldVisibility: (field: string) => void;
   toggleSettingsPanel: () => void;
-  setSettingsPanelOpen: (open: boolean) => void;
   setSearchTerm: (term: string) => void;
   triggerSearch: () => void;
 
@@ -185,8 +184,6 @@ export const useLogStore = create<LogState>((set, get) => ({
   setVisibleFields: (fields) => set({ visibleFields: fields }),
 
   toggleSettingsPanel: () => set((state) => ({ settingsPanelOpen: !state.settingsPanelOpen })),
-
-  setSettingsPanelOpen: (open) => set({ settingsPanelOpen: open }),
 
   setSearchTerm: (term) => {
     set({ searchTerm: term });
