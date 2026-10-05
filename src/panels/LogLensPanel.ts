@@ -185,55 +185,10 @@ export class LogLensPanel {
               });
             }
             return;
-          case "transform":
-            // Execute transform script and send results back
-            this._executeTransform(webview, message.script, message.logs);
-            return;
         }
       },
       undefined,
       this._disposables
     );
-  }
-
-  /**
-   * Executes a transform script on logs in a sandboxed Node.js context
-   *
-   * @param webview A reference to the extension webview
-   * @param script The transform script to execute
-   * @param logs The logs to transform
-   */
-  private _executeTransform(webview: Webview, script: string, logs: any[]) {
-    try {
-      // Create a sandboxed function that receives logs array
-      // The script should return the transformed logs
-      const transformFunction = new Function('logs', `
-        'use strict';
-        ${script}
-      `);
-
-      // Execute the transform
-      const transformedLogs = transformFunction(logs);
-
-      // Validate result is an array
-      if (!Array.isArray(transformedLogs)) {
-        throw new Error('Transform script must return an array of logs');
-      }
-
-      // Send success response with transformed logs
-      webview.postMessage({
-        type: "transformResult",
-        success: true,
-        logs: transformedLogs
-      });
-
-    } catch (error) {
-      // Send error response
-      webview.postMessage({
-        type: "transformResult",
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
-      });
-    }
   }
 }

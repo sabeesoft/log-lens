@@ -11,8 +11,10 @@ export interface CsvParseResult {
 export function parseCsvContent(content: string): CsvParseResult {
   const records: Record<string, string>[] = parse(content, {
     columns: true,
+    // eslint-disable-next-line @typescript-eslint/naming-convention -- csv-parse option names are snake_case
     skip_empty_lines: true,
     trim: true,
+    // eslint-disable-next-line @typescript-eslint/naming-convention -- csv-parse option names are snake_case
     relax_column_count: true,
     cast: false,
   });
@@ -90,8 +92,9 @@ function transformValue(column: string, value: string): any {
     return null;
   }
 
-  // Numeric (up to 16 digits to avoid converting long IDs)
-  if (/^-?\d+(\.\d+)?$/.test(trimmed) && trimmed.length <= 16) {
+  // Numeric (up to 15 digits to stay within Number.MAX_SAFE_INTEGER and
+  // avoid silently corrupting long IDs)
+  if (/^-?\d+(\.\d+)?$/.test(trimmed) && trimmed.length <= 15) {
     return Number(trimmed);
   }
 

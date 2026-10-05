@@ -70,8 +70,38 @@ interface LogState {
   getActiveSearchTerms: () => string[];
 }
 
+// Resolve a field path against a log object.
+// Handles both literal keys that contain dots (e.g. obj["service.name"])
+// and genuinely nested paths (e.g. obj["service"]["name"]).
 const getNestedValue = (obj: any, path: string): any => {
-  return path.split('.').reduce((curr, key) => curr?.[key], obj);
+  if (!obj || typeof obj !== 'object') return undefined;
+
+  // Prefer a literal key match when present
+  if (path in obj) {
+    return obj[path];
+  }
+
+  // Try mixed split points: first i parts nested, remainder as a literal key
+  const parts = path.split('.');
+  for (let i = 1; i < parts.length; i++) {
+    let current: any = obj;
+    let valid = true;
+    for (const part of parts.slice(0, i)) {
+      if (current && typeof current === 'object' && part in current) {
+        current = current[part];
+      } else {
+        valid = false;
+        break;
+      }
+    }
+    const literalKey = parts.slice(i).join('.');
+    if (valid && current && typeof current === 'object' && literalKey in current) {
+      return current[literalKey];
+    }
+  }
+
+  // Finally, fully nested path
+  return parts.reduce((curr, key) => curr?.[key], obj);
 };
 
 // Convert value to string for filtering - handles objects by stringifying them
@@ -125,7 +155,8 @@ export const useLogStore = create<LogState>((set, get) => ({
   setLogs: (logs) => {
     // Clear stringify cache when logs change
     stringifyCache = new WeakMap();
-    set({ logs });
+    // Reset selection: selectedLogIndex points into filteredLogs, which changes here
+    set({ logs, selectedLogIndex: null });
     get().computeFilteredLogs();
   },
 
@@ -151,7 +182,9 @@ export const useLogStore = create<LogState>((set, get) => ({
     set((state) => ({
       appliedFilters: [...state.filters],
       appliedSearchTerm: state.searchTerm,
-      isFiltering: true
+      isFiltering: true,
+      // Reset selection: filteredLogs membership/order changes below
+      selectedLogIndex: null
     }));
     get().computeFilteredLogs();
   },
@@ -162,19 +195,20 @@ export const useLogStore = create<LogState>((set, get) => ({
       appliedFilters: [],
       searchTerm: '',
       appliedSearchTerm: '',
-      isFiltering: true
+      isFiltering: true,
+      selectedLogIndex: null
     });
     get().computeFilteredLogs();
   },
 
   // Order actions
   setOrderByField: (field) => {
-    set({ orderByField: field });
+    set({ orderByField: field, selectedLogIndex: null });
     get().computeFilteredLogs();
   },
 
   setOrderByDirection: (direction) => {
-    set({ orderByDirection: direction });
+    set({ orderByDirection: direction, selectedLogIndex: null });
     get().computeFilteredLogs();
   },
 
@@ -192,7 +226,8 @@ export const useLogStore = create<LogState>((set, get) => ({
   triggerSearch: () => {
     set((state) => ({
       appliedSearchTerm: state.searchTerm,
-      isFiltering: true
+      isFiltering: true,
+      selectedLogIndex: null
     }));
     get().computeFilteredLogs();
   },

@@ -218,7 +218,7 @@ class JavaNotationParser {
     if (trimmed === "false") {
       return false;
     }
-    if (/^-?\d+(\.\d+)?$/.test(trimmed) && trimmed.length <= 16) {
+    if (/^-?\d+(\.\d+)?$/.test(trimmed) && trimmed.length <= 15) {
       return Number(trimmed);
     }
     return trimmed;
