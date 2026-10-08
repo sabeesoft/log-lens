@@ -17,7 +17,7 @@ const NUMERIC_LEVEL_MAP: Record<number, string> = {
  * Normalizes a log level value to a standard string level.
  * Handles: "info", 30, "30", etc.
  */
-function normalizeLogLevel(value: unknown): string {
+export function normalizeLogLevel(value: unknown): string {
   // Handle numeric levels (as number or string)
   const numValue = typeof value === 'number' ? value : parseInt(String(value), 10);
   if (!isNaN(numValue) && numValue in NUMERIC_LEVEL_MAP) {

@@ -46,6 +46,12 @@ export class Tokenizer {
         continue;
       }
 
+      if (ch === '*') {
+        // Wildcard field selector (e.g. `fields *`)
+        this.push('ident', '*', this.pos, this.pos + 1);
+        this.pos++;
+        continue;
+      }
       if (this.readSingleChar(ch)) continue;
       if (ch === '=' || ch === '!' || ch === '<' || ch === '>') {
         this.readOperator();

@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import { Filter, LogEntry } from '../types';
-import { parse, run } from '../lib/logql';
+import { parse, run, serialize } from '../lib/logql';
 import type { Query, ParseError } from '../lib/logql';
+
+const EMPTY_QUERY: Query = { fields: null, filter: null, sort: [], limit: null };
 
 interface LogState {
   // Data
@@ -74,6 +76,7 @@ interface LogState {
   setQueryText: (text: string) => void;
   runQuery: (text?: string) => void;
   clearQuery: () => void;
+  sortByColumn: (field: string) => void;
 
   // Internal filter computation
   computeFilteredLogs: () => void;
@@ -293,17 +296,16 @@ export const useLogStore = create<LogState>((set, get) => ({
       return;
     }
 
+    const qf = result.query.fields;
     set((state) => ({
       queryText: input,
       appliedQuery: result.query,
       queryErrors: null,
       isFiltering: true,
       selectedLogIndex: null,
-      // `fields` drives which columns are shown
+      // `fields` drives which fields are shown; `*` (or no fields) means the full raw view
       visibleFields:
-        result.query.fields && result.query.fields.length > 0
-          ? result.query.fields
-          : state.visibleFields
+        qf && qf.length > 0 ? (qf.includes('*') ? ['all'] : qf) : state.visibleFields
     }));
     get().computeFilteredLogs();
   },
@@ -316,6 +318,24 @@ export const useLogStore = create<LogState>((set, get) => ({
       isFiltering: true,
       selectedLogIndex: null,
       visibleFields: ['all']
+    });
+    get().computeFilteredLogs();
+  },
+
+  // Toggle sort on a column — rewrites the query (query stays the source of truth)
+  sortByColumn: (field) => {
+    const base = get().appliedQuery ?? EMPTY_QUERY;
+    const current = base.sort[0];
+    const direction: 'asc' | 'desc' =
+      current && current.field === field && current.direction === 'asc' ? 'desc' : 'asc';
+
+    const nextQuery: Query = { ...base, sort: [{ field, direction }] };
+    set({
+      appliedQuery: nextQuery,
+      queryText: serialize(nextQuery),
+      queryErrors: null,
+      isFiltering: true,
+      selectedLogIndex: null
     });
     get().computeFilteredLogs();
   },

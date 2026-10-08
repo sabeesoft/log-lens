@@ -1,4 +1,4 @@
-import { parse, run, matches } from '../index';
+import { parse, run, matches, serialize } from '../index';
 import type { Query } from '../index';
 
 let passed = 0;
@@ -35,6 +35,10 @@ console.log('tokenizer / parser:');
 
   const implicit = parseOk('level = "error"');
   ok('implicit filter (no command keyword)', implicit.filter?.kind === 'comparison');
+
+  const star = parseOk('fields *');
+  ok('wildcard fields *', JSON.stringify(star.fields) === JSON.stringify(['*']));
+  ok('wildcard round-trips', serialize(parseOk('fields * | sort ts desc')) === 'fields *\n| sort ts desc');
 
   const multiFilter = parseOk('filter a = 1 | filter b = 2');
   ok('multiple filter clauses AND-ed', multiFilter.filter?.kind === 'and');
@@ -116,6 +120,27 @@ console.log('custom getValue (nested):');
     'nested via injected getValue',
     matches(parseOk('@message.service.name = "api"'), rec, { getValue }),
   );
+}
+
+console.log('serializer round-trips:');
+{
+  const roundtrip = (input: string) => {
+    const q1 = parseOk(input);
+    const text = serialize(q1);
+    const q2 = parseOk(text);
+    return JSON.stringify(q1) === JSON.stringify(q2);
+  };
+  ok('simple comparison', roundtrip('filter level = "error"'));
+  ok('full pipeline', roundtrip('fields @timestamp, level, service | filter level = "error" and status >= 500 | sort @timestamp desc | limit 20'));
+  ok('in list', roundtrip('filter service in ["payments-svc","auth-gateway"]'));
+  ok('and/or precedence', roundtrip('filter a = 1 or b = 2 and c = 3'));
+  ok('not + parens', roundtrip('filter not (a = 1 or b = 2)'));
+  ok('regex literal', roundtrip('filter msg like /timeout/'));
+  ok('multi sort', roundtrip('sort a desc, b asc'));
+
+  // Spot-check exact canonical output
+  const q = parseOk('level="error"|sort ts desc');
+  ok('canonical text', serialize(q) === 'filter level = "error"\n| sort ts desc');
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

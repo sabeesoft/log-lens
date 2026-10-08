@@ -1,6 +1,7 @@
 import QueryBar from './components/QueryBar';
 import SettingsPanel from './components/SettingsPanel';
 import LogList from './components/LogList';
+import LogTable from './components/LogTable';
 import Sidebar from './components/Sidebar';
 import LoadingOverlay from './components/LoadingOverlay';
 import TraceModal from './components/TraceModal';
@@ -41,10 +42,19 @@ export default function LogViewer() {
   const activeTraceId = useLogStore((state) => state.activeTraceId);
   const traceLogs = useLogStore((state) => state.traceLogs);
   const closeTraceModal = useLogStore((state) => state.closeTraceModal);
+  const appliedQuery = useLogStore((state) => state.appliedQuery);
+  const sortByColumn = useLogStore((state) => state.sortByColumn);
 
   const allFields = useLogFields(logs, appliedFieldDepth);
   const activeSearchTerms = getActiveSearchTerms();
   const selectedLog = selectedLogIndex !== null ? filteredLogs[selectedLogIndex] : null;
+
+  // Columnar table only when explicit fields are listed.
+  // No `fields`, or `fields *`, shows the full raw rows (every field, no columns).
+  const rawFields = appliedQuery?.fields && appliedQuery.fields.length > 0 ? appliedQuery.fields : null;
+  const showAll = rawFields?.includes('*') ?? false;
+  const columns = rawFields && !showAll ? rawFields : null;
+  const sortState = appliedQuery?.sort[0] ?? null;
 
   return (
     <div
@@ -75,16 +85,27 @@ export default function LogViewer() {
           position: 'relative'
         }}
       >
-        <LogList
-          logs={filteredLogs}
-          selectedLogIndex={selectedLogIndex}
-          onSelectLog={selectLog}
-          activeSearchTerms={activeSearchTerms}
-          getLevelBorderColor={getLevelBorderColor}
-          visibleFields={visibleFields}
-          levelField=""
-          timestampField=""
-        />
+        {columns ? (
+          <LogTable
+            logs={filteredLogs}
+            columns={columns}
+            selectedLogIndex={selectedLogIndex}
+            onSelectLog={selectLog}
+            sort={sortState}
+            onSort={sortByColumn}
+          />
+        ) : (
+          <LogList
+            logs={filteredLogs}
+            selectedLogIndex={selectedLogIndex}
+            onSelectLog={selectLog}
+            activeSearchTerms={activeSearchTerms}
+            getLevelBorderColor={getLevelBorderColor}
+            visibleFields={visibleFields}
+            levelField=""
+            timestampField=""
+          />
+        )}
 
         {/* Loading overlay */}
         <LoadingOverlay visible={isFiltering} />

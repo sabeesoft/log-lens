@@ -3,3 +3,5 @@
 /out
 
 *.vsix
+# Local working doc, not part of the repo
+webview-ui/src/lib/logql/PLAN.md

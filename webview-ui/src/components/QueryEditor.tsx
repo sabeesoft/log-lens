@@ -125,14 +125,16 @@ export default function QueryEditor({
     setSuggestions(next);
     setActiveIdx(0);
 
-    // Caret position (monospace: column * charWidth)
+    // Caret position in viewport coords (monospace: column * charWidth).
+    // Fixed positioning so the popup is never clipped by an overflow:hidden ancestor.
     const before = value.slice(0, start);
     const rows = before.split('\n');
     const row = rows.length - 1;
     const col = rows[rows.length - 1].length;
+    const rect = ta.getBoundingClientRect();
     setCaret({
-      top: PAD + (row + 1) * LINE_HEIGHT - ta.scrollTop,
-      left: gutterWidth + PAD + col * charWidth - ta.scrollLeft,
+      top: rect.top + PAD + (row + 1) * LINE_HEIGHT - ta.scrollTop,
+      left: rect.left + PAD + col * charWidth - ta.scrollLeft,
     });
   };
 
@@ -293,21 +295,25 @@ export default function QueryEditor({
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyDown}
             onScroll={syncScroll}
-            onFocus={() => setFocused(true)}
             onBlur={() => {
               setFocused(false);
               // delay so clicks on the popup register
               setTimeout(() => setSuggestions([]), 120);
             }}
             onClick={updateSuggestions}
+            onFocus={() => {
+              setFocused(true);
+              updateSuggestions();
+            }}
             spellCheck={false}
             rows={Math.min(Math.max(lines, 1), 8)}
             style={{
+              display: 'block',
               position: 'relative',
               width: '100%',
-              height: '100%',
               minHeight: LINE_HEIGHT + PAD * 2,
-              resize: 'vertical',
+              // auto-grow by content (rows); no manual drag-resize (kept layers in sync)
+              resize: 'none',
               padding: `${PAD}px ${PAD}px`,
               margin: 0,
               border: 'none',
@@ -350,15 +356,15 @@ export default function QueryEditor({
       {suggestions.length > 0 && (
         <ul
           style={{
-            position: 'absolute',
+            position: 'fixed',
             top: caret.top,
-            left: Math.min(caret.left, 400),
-            zIndex: 50,
+            left: caret.left,
+            zIndex: 1000,
             margin: 0,
             padding: '4px',
             listStyle: 'none',
-            minWidth: '180px',
-            maxHeight: '220px',
+            minWidth: '200px',
+            maxHeight: '240px',
             overflowY: 'auto',
             backgroundColor: '#1f1f1f',
             border: '1px solid #3a3a3a',

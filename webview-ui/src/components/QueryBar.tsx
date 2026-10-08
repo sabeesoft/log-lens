@@ -1,7 +1,26 @@
-import { Play, AlertCircle, Settings, FileText, Loader2 } from 'lucide-react';
+import { useMemo } from 'react';
+import { Play, AlertCircle, Settings, FileText, Loader2, Network } from 'lucide-react';
 import { useLogStore } from '../store/logStore';
 import { useLogFields } from '../hooks/useLogFields';
+import { autoDetectLevelField, autoDetectTimestampField } from '../utils/fieldMapping';
+import { detectServiceNameField } from '../utils/traceUtils';
+import { LogEntry } from '../types';
 import QueryEditor from './QueryEditor';
+
+function formatOf(fileName: string): string {
+  const lower = fileName.toLowerCase();
+  if (lower.endsWith('.json')) return 'JSON';
+  if (lower.endsWith('.log') || lower.endsWith('.ndjson')) return 'NDJSON';
+  if (lower.endsWith('.csv')) return 'CSV';
+  return '';
+}
+
+function firstObject(logs: LogEntry[]): Record<string, any> | null {
+  for (const log of logs) {
+    if (log && typeof log === 'object') return log as Record<string, any>;
+  }
+  return null;
+}
 
 export default function QueryBar() {
   const queryText = useLogStore((s) => s.queryText);
@@ -21,9 +40,24 @@ export default function QueryBar() {
   const isFiltering = useLogStore((s) => s.isFiltering);
   const settingsOpen = useLogStore((s) => s.settingsPanelOpen);
   const toggleSettingsPanel = useLogStore((s) => s.toggleSettingsPanel);
+  const openTraceModal = useLogStore((s) => s.openTraceModal);
 
   const hasErrors = !!queryErrors && queryErrors.length > 0;
   const isActive = !!appliedQuery;
+  // Single line: center the editor with the buttons. Multi-line: align to the top.
+  const multiline = queryText.includes('\n');
+
+  // Auto-detected field mapping (shown in the toolbar for transparency)
+  const detected = useMemo(() => {
+    const sample = firstObject(logs);
+    return {
+      timestamp: sample ? autoDetectTimestampField(sample) : null,
+      level: sample ? autoDetectLevelField(sample) : null,
+      service: detectServiceNameField(logs),
+    };
+  }, [logs]);
+
+  const format = formatOf(fileName);
 
   return (
     <div
@@ -34,7 +68,83 @@ export default function QueryBar() {
         flexShrink: 0,
       }}
     >
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+      {/* Meta row: file info · detected mapping · count · service map */}
+      {totalCount > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '14px',
+            marginBottom: '8px',
+            fontSize: '11px',
+            fontFamily: 'monospace',
+            color: '#52525b',
+            flexWrap: 'wrap',
+          }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#a1a1aa' }}>
+            <FileText size={12} />
+            <span title={fileName} style={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {fileName || 'logs'}
+            </span>
+            <span style={{ color: '#52525b' }}>
+              · {totalCount.toLocaleString()} entries{format ? ` · ${format}` : ''}
+            </span>
+          </span>
+
+          {(detected.timestamp || detected.level || detected.service) && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ color: '#3f3f46', fontWeight: 600, letterSpacing: '0.5px' }}>DETECTED</span>
+              {detected.timestamp && <Mapping label="ts" value={detected.timestamp} />}
+              {detected.level && <Mapping label="level" value={detected.level} />}
+              {detected.service && <Mapping label="service" value={detected.service} />}
+            </span>
+          )}
+
+          <span style={{ flex: 1 }} />
+
+          <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            {isFiltering ? (
+              <>
+                <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} />
+                <span>Filtering…</span>
+              </>
+            ) : (
+              <>
+                <span style={{ color: '#a1a1aa', fontWeight: 600 }}>{filteredCount.toLocaleString()}</span>
+                <span>/ {totalCount.toLocaleString()}</span>
+              </>
+            )}
+          </span>
+
+          {detected.service && (
+            <button
+              onClick={() => openTraceModal('all', logs)}
+              title="Open service map for all logs"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '3px 8px',
+                backgroundColor: 'transparent',
+                color: '#a1a1aa',
+                borderRadius: '5px',
+                border: '1px solid #333',
+                cursor: 'pointer',
+                fontSize: '11px',
+                fontFamily: 'monospace',
+              }}
+            >
+              <Network size={12} />
+              SERVICE MAP
+            </button>
+          )}
+          <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+        </div>
+      )}
+
+      {/* Editor row */}
+      <div style={{ display: 'flex', gap: '8px', alignItems: multiline ? 'flex-start' : 'center' }}>
         <QueryEditor
           value={queryText}
           onChange={setQueryText}
@@ -45,7 +155,6 @@ export default function QueryBar() {
           hasErrors={hasErrors}
         />
 
-        {/* Run */}
         <button
           onClick={() => runQuery()}
           title="Run query (Ctrl/Cmd + Enter)"
@@ -53,8 +162,8 @@ export default function QueryBar() {
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            padding: '0 14px',
-            height: '36px',
+            padding: '0 13px',
+            height: '34px',
             backgroundColor: '#3b82f6',
             color: '#fff',
             borderRadius: '6px',
@@ -71,7 +180,6 @@ export default function QueryBar() {
           Run
         </button>
 
-        {/* Filters */}
         <button
           onClick={toggleSettingsPanel}
           title="Filters & settings"
@@ -79,8 +187,8 @@ export default function QueryBar() {
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            padding: '0 14px',
-            height: '36px',
+            padding: '0 13px',
+            height: '34px',
             backgroundColor: settingsOpen ? '#3b82f6' : '#222',
             color: settingsOpen ? '#fff' : '#a1a1aa',
             borderRadius: '6px',
@@ -132,54 +240,16 @@ export default function QueryBar() {
           ))}
         </div>
       )}
-
-      {/* Compact meta line: filename (left) + result count (right) */}
-      {totalCount > 0 && (
-        <div
-          style={{
-            marginTop: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontSize: '11px',
-            fontFamily: 'monospace',
-            color: '#52525b',
-          }}
-        >
-          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', minWidth: 0 }}>
-            {fileName && (
-              <>
-                <FileText size={11} style={{ flexShrink: 0 }} />
-                <span
-                  title={fileName}
-                  style={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    maxWidth: '280px',
-                  }}
-                >
-                  {fileName}
-                </span>
-              </>
-            )}
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
-            {isFiltering ? (
-              <>
-                <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} />
-                <span>Filtering…</span>
-                <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-              </>
-            ) : (
-              <>
-                <span style={{ color: '#a1a1aa', fontWeight: 600 }}>{filteredCount}</span>
-                <span>/ {totalCount}</span>
-              </>
-            )}
-          </span>
-        </div>
-      )}
     </div>
+  );
+}
+
+function Mapping({ label, value }: { label: string; value: string }) {
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+      <span style={{ color: '#52525b' }}>{label}</span>
+      <span style={{ color: '#3f3f46' }}>←</span>
+      <span style={{ color: '#9cdcfe' }}>{value}</span>
+    </span>
   );
 }

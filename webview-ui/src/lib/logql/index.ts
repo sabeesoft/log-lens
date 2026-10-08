@@ -7,6 +7,7 @@
  * beyond the import path.
  */
 export { parse } from './parser';
+export { serialize } from './serializer';
 export { matches, comparator, run } from './evaluator';
 export { tokenize, Tokenizer } from './tokenizer';
 export type { TokenizeResult } from './tokenizer';

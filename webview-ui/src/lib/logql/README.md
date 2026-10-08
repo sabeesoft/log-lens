@@ -44,8 +44,11 @@ op         ::= '=' | '!=' | '<' | '<=' | '>' | '>=' | 'like'
 value      ::= STRING | NUMBER | BOOL | IDENT
 bareTerm   ::= STRING | IDENT              // free-text substring over the record
 sortItem   ::= field ('asc' | 'desc')?
-field      ::= IDENT | '@'IDENT | dotted.path | "quoted"
+field      ::= IDENT | '@'IDENT | dotted.path | "quoted" | '*'
 ```
+
+`fields *` selects everything; the host app renders it as the full raw rows
+(every field, no column projection) — the same view as omitting `fields`.
 
 Keywords (`fields filter sort limit and or not in like asc desc true false`)
 are case-insensitive. Strings use single or double quotes with `\` escapes.
