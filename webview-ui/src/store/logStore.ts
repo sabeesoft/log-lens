@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { Filter, LogEntry } from '../types';
+import { parse, run } from '../lib/logql';
+import type { Query, ParseError } from '../lib/logql';
 
 interface LogState {
   // Data
@@ -32,6 +34,11 @@ interface LogState {
   activeTraceId: string | null;
   traceLogs: LogEntry[];
 
+  // LogQL query state (CloudWatch-style query bar)
+  queryText: string;
+  appliedQuery: Query | null;
+  queryErrors: ParseError[] | null;
+
   // Actions
   setLogs: (logs: LogEntry[]) => void;
   setFileName: (fileName: string) => void;
@@ -62,6 +69,11 @@ interface LogState {
   // Trace modal actions
   openTraceModal: (traceId: string, traceLogs: LogEntry[]) => void;
   closeTraceModal: () => void;
+
+  // LogQL query actions
+  setQueryText: (text: string) => void;
+  runQuery: (text?: string) => void;
+  clearQuery: () => void;
 
   // Internal filter computation
   computeFilteredLogs: () => void;
@@ -150,6 +162,11 @@ export const useLogStore = create<LogState>((set, get) => ({
   traceModalOpen: false,
   activeTraceId: null,
   traceLogs: [],
+
+  // LogQL query state
+  queryText: '',
+  appliedQuery: null,
+  queryErrors: null,
 
   // Actions
   setLogs: (logs) => {
@@ -249,6 +266,60 @@ export const useLogStore = create<LogState>((set, get) => ({
     traceLogs: []
   }),
 
+  // LogQL query actions
+  setQueryText: (text) => set({ queryText: text }),
+
+  runQuery: (text) => {
+    const input = text !== undefined ? text : get().queryText;
+    const trimmed = input.trim();
+
+    // Empty query → clear the applied query and fall back to the structured filters
+    if (!trimmed) {
+      set({
+        queryText: input,
+        appliedQuery: null,
+        queryErrors: null,
+        isFiltering: true,
+        selectedLogIndex: null
+      });
+      get().computeFilteredLogs();
+      return;
+    }
+
+    const result = parse(trimmed);
+    if (!result.ok) {
+      // Keep the previous applied query; just surface the errors
+      set({ queryText: input, queryErrors: result.errors });
+      return;
+    }
+
+    set((state) => ({
+      queryText: input,
+      appliedQuery: result.query,
+      queryErrors: null,
+      isFiltering: true,
+      selectedLogIndex: null,
+      // `fields` drives which columns are shown
+      visibleFields:
+        result.query.fields && result.query.fields.length > 0
+          ? result.query.fields
+          : state.visibleFields
+    }));
+    get().computeFilteredLogs();
+  },
+
+  clearQuery: () => {
+    set({
+      queryText: '',
+      appliedQuery: null,
+      queryErrors: null,
+      isFiltering: true,
+      selectedLogIndex: null,
+      visibleFields: ['all']
+    });
+    get().computeFilteredLogs();
+  },
+
   toggleFieldVisibility: (field) =>
     set((state) => {
       let visibleFields = [...state.visibleFields];
@@ -280,10 +351,20 @@ export const useLogStore = create<LogState>((set, get) => ({
 
   // Compute filtered logs - called when filters/search/sort changes
   computeFilteredLogs: () => {
-    const { logs, appliedFilters, orderByField, orderByDirection, appliedSearchTerm } = get();
+    const { logs, appliedFilters, orderByField, orderByDirection, appliedSearchTerm, appliedQuery } = get();
 
     // Use requestAnimationFrame for smoother UI
     requestAnimationFrame(() => {
+      // LogQL query takes over filtering/sorting/limiting when present
+      if (appliedQuery) {
+        const { rows } = run(logs, appliedQuery, {
+          getValue: getNestedValue,
+          caseInsensitive: true
+        });
+        set({ filteredLogs: rows, isFiltering: false });
+        return;
+      }
+
       let result = logs;
 
       // Apply search term first (searches across all text content)

@@ -1,4 +1,4 @@
-import Header from './components/Header';
+import QueryBar from './components/QueryBar';
 import SettingsPanel from './components/SettingsPanel';
 import LogList from './components/LogList';
 import Sidebar from './components/Sidebar';
@@ -11,7 +11,6 @@ import { useLogStore } from './store/logStore';
 export default function LogViewer() {
   // Zustand store
   const logs = useLogStore((state) => state.logs);
-  const fileName = useLogStore((state) => state.fileName);
   const filteredLogs = useLogStore((state) => state.filteredLogs);
   const filters = useLogStore((state) => state.filters);
   const appliedFilters = useLogStore((state) => state.appliedFilters);
@@ -20,7 +19,6 @@ export default function LogViewer() {
   const selectedLogIndex = useLogStore((state) => state.selectedLogIndex);
   const visibleFields = useLogStore((state) => state.visibleFields);
   const settingsPanelOpen = useLogStore((state) => state.settingsPanelOpen);
-  const searchTerm = useLogStore((state) => state.searchTerm);
   const isFiltering = useLogStore((state) => state.isFiltering);
   const fieldDepth = useLogStore((state) => state.fieldDepth);
   const appliedFieldDepth = useLogStore((state) => state.appliedFieldDepth);
@@ -36,8 +34,6 @@ export default function LogViewer() {
   const toggleFieldVisibility = useLogStore((state) => state.toggleFieldVisibility);
   const setVisibleFields = useLogStore((state) => state.setVisibleFields);
   const toggleSettingsPanel = useLogStore((state) => state.toggleSettingsPanel);
-  const setSearchTerm = useLogStore((state) => state.setSearchTerm);
-  const triggerSearch = useLogStore((state) => state.triggerSearch);
   const getActiveSearchTerms = useLogStore((state) => state.getActiveSearchTerms);
   const setFieldDepth = useLogStore((state) => state.setFieldDepth);
   const applyFieldDepth = useLogStore((state) => state.applyFieldDepth);
@@ -65,18 +61,8 @@ export default function LogViewer() {
         overflow: 'hidden'
       }}
     >
-      {/* Fixed Header */}
-      <Header
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        onSearchTrigger={triggerSearch}
-        onSettingsToggle={toggleSettingsPanel}
-        settingsOpen={settingsPanelOpen}
-        filteredCount={filteredLogs.length}
-        totalCount={logs.length}
-        fileName={fileName}
-        isFiltering={isFiltering}
-      />
+      {/* CloudWatch-style query bar (top bar: editor + Run + Filters) */}
+      <QueryBar />
 
       {/* Main content area - fills remaining space */}
       <div
