@@ -1,137 +1,108 @@
-import { commands, ExtensionContext, window } from "vscode";
+import { commands, ExtensionContext, Uri, window } from "vscode";
 import { LogLensPanel } from "./panels/LogLensPanel";
-import { parseCsvContent } from "./parsers/csvParser";
-import * as path from "path";
+import { logLensStatusBar } from "./panels/LogLensStatusBar";
+import { displayResult, openLogByPath, parseContent, LogFormat } from "./fileLoader";
+import {
+  clearRecentFiles,
+  RecentFilesProvider,
+  registerRecentFilesProvider,
+} from "./views/recentFiles";
+
+/**
+ * Load the active editor's document into Log Lens using the given format.
+ * Shared by the three editor-based commands.
+ */
+function loadActiveEditor(context: ExtensionContext, format: LogFormat, requireExt?: string) {
+  const editor = window.activeTextEditor;
+  if (!editor) {
+    window.showWarningMessage("No active editor found. Please open a file first.");
+    return;
+  }
+
+  const document = editor.document;
+  const filePath = document.fileName;
+
+  if (format === "JSON" && document.languageId !== "json" && !filePath.endsWith(".json")) {
+    window.showWarningMessage("Please open a JSON file containing log data.");
+    return;
+  }
+  if (requireExt && !filePath.endsWith(requireExt)) {
+    window.showWarningMessage(`Please open a ${requireExt} file.`);
+    return;
+  }
+
+  try {
+    const result = parseContent(document.getText(), format);
+    displayResult(context, filePath, result);
+  } catch (error) {
+    window.showErrorMessage(
+      `Failed to parse file: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
+  }
+}
 
 export function activate(context: ExtensionContext) {
-  // Create the load current file command
-  const loadCurrentFileCommand = commands.registerCommand("log-lens.loadCurrentFile", () => {
-    const editor = window.activeTextEditor;
-    if (!editor) {
-      window.showWarningMessage("No active editor found. Please open a JSON file.");
-      return;
-    }
+  // --- Activity Bar: Recent files view ---
+  const recentProvider = new RecentFilesProvider(context);
+  registerRecentFilesProvider(recentProvider);
+  context.subscriptions.push(
+    window.registerTreeDataProvider("logLens.recent", recentProvider)
+  );
 
-    const document = editor.document;
-    const filePath = document.fileName;
-    const fileName = path.basename(filePath);
+  // --- Status bar ---
+  context.subscriptions.push(logLensStatusBar.init());
 
-    // Check if file is JSON
-    if (document.languageId !== "json" && !document.fileName.endsWith('.json')) {
-      window.showWarningMessage("Please open a JSON file containing log data.");
-      return;
-    }
+  // --- Editor-based commands (load the file in the active editor) ---
+  context.subscriptions.push(
+    commands.registerCommand("log-lens.loadCurrentFile", () =>
+      loadActiveEditor(context, "JSON")
+    ),
+    commands.registerCommand("log-lens.loadLogFile", () =>
+      loadActiveEditor(context, "NDJSON")
+    ),
+    commands.registerCommand("log-lens.loadCsvFile", () =>
+      loadActiveEditor(context, "CSV", ".csv")
+    )
+  );
 
-    try {
-      const content = document.getText();
-      const logs = JSON.parse(content);
-
-      // Validate it's an array
-      if (!Array.isArray(logs)) {
-        window.showErrorMessage("JSON file must contain an array of log entries.");
-        return;
-      }
-
-      // Open the panel for this specific file and send logs
-      LogLensPanel.render(context.extensionUri, filePath);
-      LogLensPanel.sendLogsToWebview(filePath, logs, fileName);
-
-    } catch (error) {
-      window.showErrorMessage(`Failed to parse JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  });
-
-  // Create the load log file command (for newline-delimited JSON)
-  const loadLogFileCommand = commands.registerCommand("log-lens.loadLogFile", () => {
-    const editor = window.activeTextEditor;
-    if (!editor) {
-      window.showWarningMessage("No active editor found. Please open a .log file.");
-      return;
-    }
-
-    const document = editor.document;
-    const filePath = document.fileName;
-    const fileName = path.basename(filePath);
-
-    try {
-      const content = document.getText();
-      const lines = content.split('\n').filter(line => line.trim().length > 0);
-
-      const logs: any[] = [];
-      const errors: string[] = [];
-
-      lines.forEach((line, index) => {
-        try {
-          const log = JSON.parse(line);
-          logs.push(log);
-        } catch (error) {
-          errors.push(`Line ${index + 1}: ${error instanceof Error ? error.message : 'Parse error'}`);
-        }
+  // --- Open Log File… (file picker, no active editor needed) ---
+  context.subscriptions.push(
+    commands.registerCommand("log-lens.openLogFile", async () => {
+      const picked = await window.showOpenDialog({
+        canSelectMany: false,
+        openLabel: "Open with Log Lens",
+        filters: {
+          "Log files": ["json", "log", "ndjson", "csv"],
+          "All files": ["*"],
+        },
       });
-
-      if (logs.length === 0) {
-        window.showErrorMessage("No valid JSON log entries found in the file.");
-        return;
+      if (picked && picked[0]) {
+        await openLogByPath(context, picked[0]);
       }
+    })
+  );
 
-      // Show warning if there were parsing errors
-      if (errors.length > 0) {
-        window.showWarningMessage(
-          `Loaded ${logs.length} logs, but ${errors.length} line(s) had parsing errors. Check the console for details.`
-        );
-        console.warn("Log parsing errors:", errors);
+  // --- Explorer context menu: Open with Log Lens ---
+  context.subscriptions.push(
+    commands.registerCommand("log-lens.openFromExplorer", async (uri: Uri) => {
+      if (uri) {
+        await openLogByPath(context, uri);
       }
+    })
+  );
 
-      // Open the panel for this specific file and send logs
-      LogLensPanel.render(context.extensionUri, filePath);
-      LogLensPanel.sendLogsToWebview(filePath, logs, fileName);
-
-    } catch (error) {
-      window.showErrorMessage(`Failed to load log file: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  });
-
-  // Create the load CSV file command
-  const loadCsvFileCommand = commands.registerCommand("log-lens.loadCsvFile", () => {
-    const editor = window.activeTextEditor;
-    if (!editor) {
-      window.showWarningMessage("No active editor found. Please open a CSV file.");
-      return;
-    }
-
-    const document = editor.document;
-    const filePath = document.fileName;
-    const fileName = path.basename(filePath);
-
-    if (!document.fileName.endsWith('.csv')) {
-      window.showWarningMessage("Please open a CSV file.");
-      return;
-    }
-
-    try {
-      const content = document.getText();
-      const result = parseCsvContent(content);
-
-      if (result.logs.length === 0) {
-        window.showErrorMessage("No valid data rows found in the CSV file.");
-        return;
+  // --- Recent list: reopen / clear ---
+  context.subscriptions.push(
+    commands.registerCommand("log-lens.openRecent", async (filePath: string) => {
+      if (filePath) {
+        await openLogByPath(context, Uri.file(filePath));
       }
+    }),
+    commands.registerCommand("log-lens.clearRecent", () => clearRecentFiles(context))
+  );
 
-      if (result.errors.length > 0) {
-        window.showWarningMessage(
-          `Loaded ${result.logs.length} rows, but ${result.errors.length} row(s) had parsing issues. Check the console for details.`
-        );
-        console.warn("CSV parsing issues:", result.errors);
-      }
-
-      LogLensPanel.render(context.extensionUri, filePath);
-      LogLensPanel.sendLogsToWebview(filePath, result.logs, fileName);
-
-    } catch (error) {
-      window.showErrorMessage(`Failed to parse CSV: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  });
-
-  // Add commands to the extension context
-  context.subscriptions.push(loadCurrentFileCommand, loadLogFileCommand, loadCsvFileCommand);
+  // --- Status bar click: show parse errors ---
+  context.subscriptions.push(
+    commands.registerCommand("log-lens.showErrors", () => LogLensPanel.showActiveErrors())
+  );
 }

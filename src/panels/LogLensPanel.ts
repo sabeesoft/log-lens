@@ -1,6 +1,7 @@
 import { Disposable, Webview, WebviewPanel, window, Uri, ViewColumn } from "vscode";
 import { getUri } from "../utilities/getUri";
 import { getNonce } from "../utilities/getNonce";
+import { logLensStatusBar } from "./LogLensStatusBar";
 import * as path from "path";
 
 /**
@@ -13,15 +14,25 @@ import * as path from "path";
  * - Setting the HTML (and by proxy CSS/JavaScript) content of the webview panel
  * - Setting message listeners so data can be passed between the webview and extension
  */
+export interface LogMeta {
+  format: string;
+  errors: string[];
+}
+
 export class LogLensPanel {
   // Map of file paths to their panels (allows multiple panels for different files)
   private static panels: Map<string, LogLensPanel> = new Map();
+  // The panel whose tab is currently focused, if any.
+  private static activePanel: LogLensPanel | undefined;
 
   private readonly _panel: WebviewPanel;
   private readonly _filePath: string;
   private _disposables: Disposable[] = [];
   private _logs: any[] = [];
   private _fileName: string;
+  private _format = "JSON";
+  private _errors: string[] = [];
+  private _matched = 0;
 
   /**
    * The LogLensPanel class private constructor (called only from the render method).
@@ -38,6 +49,21 @@ export class LogLensPanel {
     // Set an event listener to listen for when the panel is disposed (i.e. when the user closes
     // the panel or when the panel is closed programmatically)
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+
+    // Track focus so the status bar item shows only for the active Log Lens tab.
+    this._panel.onDidChangeViewState(
+      () => {
+        if (this._panel.active) {
+          LogLensPanel.activePanel = this;
+          this._updateStatusBar();
+        } else if (LogLensPanel.activePanel === this) {
+          LogLensPanel.activePanel = undefined;
+          logLensStatusBar.update(null);
+        }
+      },
+      null,
+      this._disposables
+    );
 
     // Set the HTML content for the webview panel
     this._panel.webview.html = this._getWebviewContent(this._panel.webview, extensionUri);
@@ -59,6 +85,8 @@ export class LogLensPanel {
     if (existingPanel) {
       // If panel for this file exists, reveal it
       existingPanel._panel.reveal(ViewColumn.One);
+      LogLensPanel.activePanel = existingPanel;
+      existingPanel._updateStatusBar();
     } else {
       // Create a new panel for this file
       const fileName = path.basename(filePath);
@@ -82,6 +110,7 @@ export class LogLensPanel {
 
       const newPanel = new LogLensPanel(panel, extensionUri, filePath);
       LogLensPanel.panels.set(filePath, newPanel);
+      LogLensPanel.activePanel = newPanel;
     }
   }
 
@@ -92,17 +121,50 @@ export class LogLensPanel {
    * @param logs Array of log entries (strings or objects)
    * @param fileName The name of the file being viewed
    */
-  public static sendLogsToWebview(filePath: string, logs: any[], fileName: string) {
+  public static sendLogsToWebview(filePath: string, logs: any[], fileName: string, meta?: LogMeta) {
     const panel = LogLensPanel.panels.get(filePath);
     if (panel) {
       panel._logs = logs;
       panel._fileName = fileName;
+      if (meta) {
+        panel._format = meta.format;
+        panel._errors = meta.errors;
+      }
+      // Until the webview reports a filtered count, everything matches.
+      panel._matched = logs.length;
       panel._panel.webview.postMessage({
         type: "updateLogs",
         logs: logs,
         fileName: fileName
       });
+      if (LogLensPanel.activePanel === panel) {
+        panel._updateStatusBar();
+      }
     }
+  }
+
+  /** Reveal the parse errors (if any) for the active panel. */
+  public static showActiveErrors() {
+    const panel = LogLensPanel.activePanel;
+    if (!panel || panel._errors.length === 0) {
+      window.showInformationMessage("Log Lens: no parse errors in the current file.");
+      return;
+    }
+    const channel = window.createOutputChannel("Log Lens");
+    channel.clear();
+    channel.appendLine(`${panel._errors.length} parse error(s) in ${panel._fileName}:`);
+    channel.appendLine("");
+    panel._errors.forEach((e) => channel.appendLine(e));
+    channel.show(true);
+  }
+
+  private _updateStatusBar() {
+    logLensStatusBar.update({
+      matched: this._matched,
+      total: this._logs.length,
+      errorCount: this._errors.length,
+      format: this._format,
+    });
   }
 
   /**
@@ -111,6 +173,12 @@ export class LogLensPanel {
   public dispose() {
     // Remove from panels map
     LogLensPanel.panels.delete(this._filePath);
+
+    // Hide the status bar if this was the focused panel
+    if (LogLensPanel.activePanel === this) {
+      LogLensPanel.activePanel = undefined;
+      logLensStatusBar.update(null);
+    }
 
     // Dispose of the current webview panel
     this._panel.dispose();
@@ -183,6 +251,15 @@ export class LogLensPanel {
                 logs: this._logs,
                 fileName: this._fileName
               });
+            }
+            return;
+          case "stats":
+            // The webview reports how many entries match the current query.
+            if (typeof message.matched === "number") {
+              this._matched = message.matched;
+              if (LogLensPanel.activePanel === this) {
+                this._updateStatusBar();
+              }
             }
             return;
         }
