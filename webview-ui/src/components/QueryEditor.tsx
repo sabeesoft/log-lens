@@ -69,6 +69,7 @@ export default function QueryEditor({
   const hasErrors = errors.length > 0;
   const taRef = useRef<HTMLTextAreaElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
+  const gutterRef = useRef<HTMLDivElement>(null);
   const charRef = useRef<HTMLSpanElement>(null);
   const activeLiRef = useRef<HTMLLIElement>(null);
 
@@ -77,9 +78,21 @@ export default function QueryEditor({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [caret, setCaret] = useState({ top: 0, left: 0 });
+  // Cap the editor at 30% of the viewport; it scrolls internally beyond that.
+  const [maxPx, setMaxPx] = useState(() =>
+    typeof window !== 'undefined' ? Math.round(window.innerHeight * 0.3) : 300
+  );
 
   const lines = value.length === 0 ? 1 : value.split('\n').length;
   const gutterWidth = Math.max(28, String(lines).length * 8 + 16);
+  const contentPx = lines * LINE_HEIGHT + PAD * 2;
+  const editorPx = Math.min(contentPx, maxPx);
+
+  useEffect(() => {
+    const onResize = () => setMaxPx(Math.round(window.innerHeight * 0.3));
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   // Measure character width (monospace)
   useLayoutEffect(() => {
@@ -97,6 +110,9 @@ export default function QueryEditor({
     if (preRef.current && taRef.current) {
       preRef.current.scrollTop = taRef.current.scrollTop;
       preRef.current.scrollLeft = taRef.current.scrollLeft;
+    }
+    if (gutterRef.current && taRef.current) {
+      gutterRef.current.scrollTop = taRef.current.scrollTop;
     }
   };
 
@@ -229,6 +245,7 @@ export default function QueryEditor({
         style={{
           position: 'relative',
           display: 'flex',
+          height: editorPx,
           backgroundColor: 'var(--vscode-editorWidget-background, #1a1a1a)',
           border: `1px solid ${borderColor}`,
           borderRadius: '6px',
@@ -238,11 +255,15 @@ export default function QueryEditor({
       >
         {/* Gutter */}
         <div
+          ref={gutterRef}
           aria-hidden
           style={{
             width: gutterWidth,
             flexShrink: 0,
+            height: '100%',
+            overflow: 'hidden',
             padding: `${PAD}px 0`,
+            boxSizing: 'border-box',
             backgroundColor: 'var(--vscode-sideBar-background, #161616)',
             borderRight: '1px solid var(--vscode-input-background, #262626)',
             font: FONT,
@@ -260,7 +281,7 @@ export default function QueryEditor({
         </div>
 
         {/* Editor area */}
-        <div style={{ position: 'relative', flex: 1, minHeight: LINE_HEIGHT + PAD * 2 }}>
+        <div style={{ position: 'relative', flex: 1, height: '100%' }}>
           {/* Highlight layer */}
           <pre
             ref={preRef}
@@ -323,13 +344,13 @@ export default function QueryEditor({
               updateSuggestions();
             }}
             spellCheck={false}
-            rows={Math.min(Math.max(lines, 1), 12)}
             style={{
               display: 'block',
               position: 'relative',
               width: '100%',
-              minHeight: LINE_HEIGHT + PAD * 2,
-              // auto-grow by content (rows); no manual drag-resize (kept layers in sync)
+              height: '100%',
+              // height is driven by the container (dynamic, capped at 30vh); the
+              // textarea scrolls internally and the gutter/highlight sync to it
               resize: 'none',
               padding: `${PAD}px ${PAD}px`,
               margin: 0,
