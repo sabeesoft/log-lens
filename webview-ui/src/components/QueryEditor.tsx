@@ -23,7 +23,7 @@ const COMMAND_KW = new Set(['fields', 'filter', 'sort', 'limit']);
 const keywordColor = (value: string) =>
   COMMAND_KW.has(value)
     ? 'var(--vscode-charts-blue, #4fc1ff)'
-    : 'var(--vscode-symbolIcon-keywordForeground, #c586c0)';
+    : 'var(--vscode-charts-purple, #c586c0)';
 
 const FONT = "13px 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace";
 const LINE_HEIGHT = 20;
@@ -97,6 +97,12 @@ export default function QueryEditor({
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  // When the editor height changes, nudge the virtualized list to re-measure so
+  // its bottom rows aren't left hidden behind the taller editor.
+  useEffect(() => {
+    window.dispatchEvent(new Event('resize'));
+  }, [editorPx]);
+
   // Measure character width (monospace)
   useLayoutEffect(() => {
     if (charRef.current) {
@@ -140,10 +146,26 @@ export default function QueryEditor({
       label,
       kind: 'keyword',
     }));
+    // Rank fields so a match on the leaf name (e.g. `level` → `@message.level`)
+    // beats a match buried in the path; otherwise alphabetical slicing hides the
+    // fields the user actually typed behind dozens of sibling `@message.*` keys.
+    const scoreField = (f: string): number => {
+      const fl = f.toLowerCase();
+      const leaf = fl.split('.').pop() ?? fl;
+      if (leaf === lower) return 0;
+      if (leaf.startsWith(lower)) return 1;
+      if (fl.startsWith(lower)) return 2;
+      if (leaf.includes(lower)) return 3;
+      if (fl.includes(lower)) return 4;
+      return -1;
+    };
     const fields: Suggestion[] = availableFields
-      .filter((f) => f.toLowerCase().includes(lower) && f.toLowerCase() !== lower)
+      .filter((f) => f.toLowerCase() !== lower)
+      .map((f) => ({ f, s: scoreField(f) }))
+      .filter((x) => x.s >= 0)
+      .sort((a, b) => a.s - b.s || a.f.length - b.f.length || a.f.localeCompare(b.f))
       .slice(0, 8)
-      .map((label) => ({ label, kind: 'field' }));
+      .map((x) => ({ label: x.f, kind: 'field' as const }));
     const next = [...fields, ...kw].slice(0, 10);
 
     setSuggestions(next);
@@ -303,7 +325,7 @@ export default function QueryEditor({
             }}
           >
             {value.length === 0 ? (
-              <span style={{ color: 'var(--vscode-panel-border, #4b4b53)' }}>
+              <span style={{ color: 'var(--vscode-input-placeholderForeground, var(--vscode-descriptionForeground, #8a8a8a))' }}>
                 {'fields @timestamp, level, message | filter level = "error" | sort @timestamp desc'}
               </span>
             ) : (
@@ -363,7 +385,10 @@ export default function QueryEditor({
               font: FONT,
               lineHeight: `${LINE_HEIGHT}px`,
               whiteSpace: 'pre',
-              overflow: 'auto',
+              // Only show a scrollbar once we hit the height cap, not while the
+              // editor is still free to grow.
+              overflowX: 'auto',
+              overflowY: contentPx > maxPx ? 'auto' : 'hidden',
               color: 'transparent',
               caretColor: 'var(--vscode-foreground, #e4e4e7)',
               boxSizing: 'border-box',
@@ -377,18 +402,23 @@ export default function QueryEditor({
             title="Clear query (show all)"
             style={{
               position: 'absolute',
-              right: '6px',
-              top: '6px',
-              background: 'rgba(26,26,26,0.8)',
-              border: 'none',
+              // clear the scrollbar gutter when the editor is scrolling
+              right: contentPx > maxPx ? '14px' : '7px',
+              top: '7px',
+              width: '18px',
+              height: '18px',
+              background: 'var(--vscode-editorWidget-background, #252526)',
+              border: '1px solid var(--vscode-panel-border, #3a3a3a)',
               cursor: 'pointer',
-              padding: '3px',
-              color: 'var(--vscode-descriptionForeground, #71717a)',
+              padding: 0,
+              color: 'var(--vscode-descriptionForeground, #9db2c4)',
               display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               borderRadius: '4px',
             }}
           >
-            <span style={{ fontSize: 14, lineHeight: 1 }}>×</span>
+            <span style={{ fontSize: 13, lineHeight: 1 }}>×</span>
           </button>
         )}
       </div>

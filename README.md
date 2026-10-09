@@ -2,314 +2,198 @@
 
 # Log Lens
 
-A powerful VS Code extension for viewing, filtering, and analyzing log files with real-time search, field visibility controls, and sorting capabilities. Supports JSON, NDJSON, and CSV formats (including AWS Athena exports with Java-style notation).
+A lightweight VS Code extension for reading and querying log files. Open any
+**JSON**, **NDJSON** or **CSV** log, search it, filter by level, find the spike —
+without leaving the editor. Log Lens follows your VS Code color theme (dark,
+light and high contrast).
+
+## Demo
+
+![Log Lens in action](assets/demo.gif)
 
 ## Opening logs
 
 Log Lens never needs an active editor:
 
-- **Activity Bar** → the Log Lens view → **Open Log File…** (and your recent files)
+- **Activity Bar** → the **Log Lens** view → **Open Log File…**, plus your **recent** files
 - **Explorer** → right-click a `.json`, `.log`, `.ndjson` or `.csv` file → **Open with Log Lens**
-- **Command Palette** → `Log Lens: Open Log File…`, or load the current editor with
-  `Load Current JSON File`, `Load Log File (NDJSON)` or `Load CSV File`
+- **Command Palette** → `Log Lens: Open Log File…`, or load the file in the current
+  editor with `Load Current JSON File`, `Load Log File (NDJSON)` or `Load CSV File`
+
+While a Log Lens tab is focused, a **status bar** item shows the match count,
+the number of parse errors (click to view them) and the detected format.
 
 ## Search and Query
 
-- **Search** (default) — one live input that matches the message and every field, with
-  level chips (error/warn/info/…) that understand numeric Pino/Bunyan levels
-- **Query** — a CloudWatch Logs Insights–style pipeline (`fields | filter | sort | limit`),
-  prefilled from your search. Edits apply on **⌘/Ctrl + Enter** or **Run**; syntax errors
-  lint live with line/column, a red squiggle, and "did you mean…" / "comment out" quick fixes
+Log Lens has two modes, toggled in the toolbar. The query text is the state:
+level chips and column headers rewrite it.
 
-## Demo
+### Search (default)
 
-![Log Lens Demo](assets/log-lens.gif)
+One input that matches the **message and every field** (nested values included).
+Press **Enter** to run. **Level chips** (error / warn / info / debug / …) filter by
+level and understand **numeric Pino/Bunyan levels** (`30` ≡ `info`).
 
-## Features
+### Query
 
-### 📊 Log Visualization
-- **Virtualized rendering** - Handle thousands of log entries with smooth scrolling performance using react-window
-- **Expandable log rows** - Click any log entry to see the full JSON structure with syntax highlighting
-- **Level-based color coding** - Visual distinction between info, warn, error, and debug levels
-- **Field auto-detection** - Automatically identifies level and timestamp fields from common log formats
+A CloudWatch Logs Insights–style pipeline, prefilled from your current search so
+nothing is lost:
 
-### 🔍 Advanced Filtering
-- **Multi-field filtering** - Create multiple filters across different log fields
-- **Flexible operators** - Support for contains, equals, greater than, less than, regex, and exists checks
-- **Real-time search** - Instant highlighting of matching terms in log messages
-- **AND/OR logic** - Combine filters with logical operators for complex queries
-- **Filter management** - Save, modify, and clear filter configurations
-
-
-### 📋 Field Management
-- **Visible fields control** - Show or hide specific fields in log entries
-- **Auto-discovery** - Automatically detects all fields present in your logs
-- **Persistent selections** - Field visibility preferences are maintained across sessions
-
-### 🔀 Sorting
-- **Multi-field sorting** - Sort logs by any field (timestamp, level, custom fields)
-- **Ascending/descending** - Toggle sort direction with a single click
-- **Type-aware sorting** - Intelligent sorting for strings, numbers, and dates
-
-### 🔗 Distributed Trace Visualization
-- **Service map graph** - Visual representation of service-to-service communication using React Flow
-- **Auto-detection** - Automatically identifies trace fields (trace_id, span_id, parent_span_id, service)
-- **Nested field support** - Detects trace fields inside containers like `@message` (AWS CloudWatch compatible)
-- **Interactive nodes** - Click on service nodes to filter logs by service
-- **Status indicators** - Color-coded nodes showing healthy (green), warnings (yellow), and errors (red)
-- **Resizable panels** - Adjustable split between graph view and log list
-- **Reset view** - One-click reset to restore original graph layout and clear filters
-
-### 📝 Log Details Sidebar
-- **Multiple view modes** - Raw, Pretty (syntax-highlighted), and Tree (collapsible) views
-- **Resizable sidebar** - Drag to adjust sidebar width
-- **Copy to clipboard** - Quick copy of log entry data
-- **Overlay mode** - Sidebar overlays content without pushing the layout
-
-### 🎨 User Interface
-- **Dark theme** - Developer-friendly dark interface with monospace fonts
-- **Compact design** - Space-efficient UI with collapsible sections
-- **Responsive layout** - Adapts to different window sizes
-- **Keyboard shortcuts** - Efficient navigation and interaction
-
-## Installation
-
-### From Source
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd log-lens
+```
+fields @timestamp, level, message
+| filter level = "error" and status >= 500
+| sort @timestamp desc
+| limit 100
 ```
 
-2. Install dependencies:
-```bash
-npm run install:all
-```
+- **`fields`** picks the columns (omit it, or `fields *`, to see the full raw rows).
+  Clicking a **column header** sorts and rewrites the `| sort` line.
+- **`filter`** supports `= != < <= > >=`, `like` (substring, or a `/regex/`), `in (...)`,
+  `and` / `or` / `not`, grouping with `( )`, and bare terms for free-text search.
+  `like` on an object field (e.g. a CloudWatch `@message` container) matches its
+  JSON text, like a free-text search.
+- In Query mode **Enter inserts a newline**; apply with **⌘/Ctrl + Enter** or **Run**.
+  Typing never re-filters — it only applies when you run it.
+- **Errors** are reported on Run with a **line/column**, a red squiggle under the
+  offending token, and quick fixes: **“did you mean …?”** and **“comment out line N”**
+  (`#` starts a line comment). Run is disabled while the query has errors.
+- **Autocomplete** suggests fields (ranked so `level` surfaces `@message.level`) and
+  keywords as you type.
 
-3. Build the webview UI:
-```bash
-npm run build:webview
-```
+## Volume histogram
 
-4. Open in VS Code and press `F5` to launch the Extension Development Host
+A level-stacked histogram sits under the toolbar, bucketed from the detected
+timestamp field — red for errors, yellow for warnings, blue for the rest — with
+start / middle / end time labels, so you can see when things broke at a glance.
 
-## Usage
+## The log table
 
-### Opening Log Lens
+- **Rows never wrap.** Object/array values render as a compact `{…} N keys` or
+  `{…} N.N KB` badge (full value in the tooltip).
+- **Level columns** are colour-coded and normalise numeric levels to names.
+- Click a row to open the **details panel**.
 
-1. Open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P` on Mac)
-2. Type and select one of:
-   - **`Log Lens: Load Current JSON File`** - Loads the currently open JSON file (array format) into Log Lens
-   - **`Log Lens: Load Log File (NDJSON)`** - Loads newline-delimited JSON logs from a `.log` file
-   - **`Log Lens: Load CSV File`** - Loads a CSV file (e.g., AWS Athena exports) into Log Lens
+## Details panel
 
-### Loading Logs
+- **Raw**, **Pretty** (syntax-highlighted) and **Tree** views.
+- The tree collapses large values behind a single ▸ caret: objects/arrays show
+  `{…} N keys`, long strings and stack traces truncate and expand in place — one
+  affordance for everything.
+- **↑ / ↓** step through rows while the panel is open.
+- **Copy** the record, or **JSON TAB** to open the full record in a normal JSON
+  editor for folding and search.
+- Resizable, and overlays the list instead of pushing the layout.
 
-**Option 1: Load from JSON array file**
-- Open a JSON file containing an array of log entries
-- Run command: `Log Lens: Load Current JSON File`
+## Filters panel
 
-**Option 2: Load from newline-delimited JSON (.log file)**
-- Open a `.log` file where each line is a separate JSON object
-- Run command: `Log Lens: Load Log File (NDJSON)`
-- Example format:
-  ```
-  {"level":"error","message":"Database connection failed","timestamp":"2024-01-15T10:30:00.000Z"}
-  {"level":"info","message":"Server started","timestamp":"2024-01-15T10:30:01.000Z"}
-  ```
+The **Filters** button opens a side panel with the structured controls:
 
-**Option 3: Load from CSV file (AWS Athena exports)**
-- Open a `.csv` file exported from AWS Athena or similar data lake tools
-- Run command: `Log Lens: Load CSV File`
-- Columns are auto-detected from the CSV header row
-- Columns containing Java-style notation (`{key=value, nested={...}}`) are automatically parsed into structured objects
-- Unix epoch timestamps (seconds or milliseconds) are auto-converted to ISO 8601
-- Example format:
-  ```csv
-  key,value,headers,timestamp,offset
-  f32e7986-...,"{id=uuid, flags={isdebtor=true}, data=[1235]}","{testheader=somevalue}",1770669892,63010
-  ```
+- **Add filter** rows (contains / equals / > / < / regex / exists) combined with **AND / OR**
+- **Order by** a field, ascending or descending
+- **Visible fields** toggles and a **field depth** control for how deep nested keys are flattened
 
-### Filtering Logs
+## Distributed traces
 
-1. Click **"ADD FILTER"** in the Filters section
-2. Select a field from the dropdown
-3. Choose an operator (contains, equals, >, <, regex, exists)
-4. Enter a value (if applicable)
-5. Click **"APPLY"** to activate filters
-6. Add multiple filters and choose AND/OR logic
+When trace fields are detected, a **SERVICE MAP** action opens a service graph:
 
-### Sorting Logs
+- Service-to-service graph (React Flow + dagre) with healthy / warning / error nodes
+- Click a node to filter logs by that service
+- A resizable split between the graph and the trace’s logs
+- Auto-detects `trace_id` / `traceId`, `span_id`, `parent_span_id`, `service` /
+  `serviceName` / `service.name`, including when nested inside containers like
+  `@message`, `message`, `data`, `body` or `payload` (AWS CloudWatch compatible)
 
-1. Open the **"ORDER BY"** section
-2. Select a field to sort by
-3. Choose **ASC** (ascending) or **DESC** (descending)
+## Supported formats
 
-### Managing Field Visibility
+Log Lens reads three input formats and auto-detects the level and timestamp
+fields from common shapes.
 
-1. Open the **"VISIBLE FIELDS"** section
-2. Click field badges to toggle visibility
-3. Green = visible, Gray = hidden
+**JSON array** — a `.json` file containing an array of entries (objects or strings).
 
-### Viewing Distributed Traces
+**NDJSON** — a `.log` / `.ndjson` file with one JSON object per line; malformed
+lines are skipped and reported.
 
-1. Select a log entry that contains trace information (trace_id, span_id, etc.)
-2. Open the **Details sidebar** on the right
-3. Navigate to the **"Trace"** tab
-4. Click **"VIEW SERVICE MAP"** to open the trace visualization
-5. In the trace view:
-   - **Top panel**: Service graph showing communication flow
-   - **Bottom panel**: Log entries for the trace
-   - Click on a **service node** to filter logs by that service
-   - Use **"CLEAR FILTER"** to remove the service filter
-   - Use **"RESET VIEW"** to restore the original graph layout
-   - Drag the **resize handle** between panels to adjust the split
-   - Click a **log entry** to view details in the sidebar
+**CSV** — including AWS Athena / data-lake exports. Columns are auto-detected from
+the header row, Unix epoch timestamps (seconds or milliseconds) are converted to
+ISO 8601, and Java-style `{key=value, nested={…}}` notation is parsed into
+structured objects (nested objects, arrays, booleans, nulls and numbers).
 
-## Supported Log Formats
+Common JSON shapes it handles:
 
-Log Lens works with any JSON log format. Common formats include:
-
-**Pino logs:**
 ```json
-{
-  "level": 30,
-  "time": 1234567890,
-  "msg": "Request received",
-  "req": { "method": "GET", "url": "/" }
-}
-```
+// Pino / Bunyan (numeric levels, epoch time)
+{ "level": 30, "time": 1234567890, "msg": "Request received" }
 
-**Winston logs:**
-```json
-{
-  "level": "info",
-  "message": "Server started",
-  "timestamp": "2024-01-15T10:30:00.000Z"
-}
-```
+// Winston
+{ "level": "info", "message": "Server started", "timestamp": "2024-01-15T10:30:00.000Z" }
 
-**Bunyan logs:**
-```json
-{
-  "name": "myapp",
-  "hostname": "server01",
-  "level": 30,
-  "msg": "Application started",
-  "time": "2024-01-15T10:30:00.000Z"
-}
-```
-
-**Distributed trace logs:**
-```json
-{
-  "level": "info",
-  "message": "Processing order",
-  "timestamp": "2024-01-15T10:30:00.000Z",
-  "trace_id": "trace_abc123",
-  "span_id": "span_001",
-  "parent_span_id": null,
-  "service": "api-gateway"
-}
-```
-
-**AWS CloudWatch logs (with nested @message):**
-```json
+// AWS CloudWatch (nested @message container)
 {
   "@timestamp": "2024-01-15T10:30:00.000Z",
-  "@logStream": "app-server-01",
-  "@message": {
-    "level": "info",
-    "message": "Processing request",
-    "trace_id": "trace_abc123",
-    "span_id": "span_001",
-    "service": "api-gateway"
-  }
+  "@message": { "level": "info", "message": "Processing request", "service": "api-gateway" }
 }
 ```
 
-**CSV with Java-style notation (AWS Athena exports):**
-```csv
-key,value,headers,timestamp,offset,ingestion_year,ingestion_month,ingestion_day
-f32e7986-a851-...,"{id=uuid-001, flags={ismfszh=false, isdebtor=true}, history=[{cutomerid=125464, displayname=null}], data=[1235]}","{testheader=somevalue}",1770669892,63010,2026,02,15
-```
-The Java-style `{key=value}` notation (common in data lake snapshots from Kafka, etc.) is automatically parsed into structured objects with full support for nested objects, arrays, booleans, nulls, and numbers. Columns are flexible and auto-detected from the header row.
+## Installation (from source)
 
-**Custom formats:**
-Log Lens automatically detects common field names and patterns, including trace fields like `trace_id`, `traceId`, `span_id`, `spanId`, `parent_span_id`, `parentSpanId`, `service`, `serviceName`, and `service.name`. These fields are also detected when nested inside container fields like `@message`, `message`, `data`, `body`, or `payload` (common in AWS CloudWatch and similar log aggregators).
+```bash
+git clone https://github.com/sabeesoft/log-lens.git
+cd log-lens
+npm run install:all     # install extension + webview deps
+npm run build:webview   # build the React UI
+```
+
+Then open the folder in VS Code and press **F5** to launch the Extension
+Development Host.
 
 ## Development
 
-### Project Structure
-
 ```
 log-lens/
-├── src/                        # Extension source code
-│   ├── extension.ts           # Extension entry point
+├── src/                        # Extension host (Node)
+│   ├── extension.ts            # Commands, Activity Bar view, status bar
+│   ├── fileLoader.ts           # Detect / parse / display a log file
 │   ├── panels/
-│   │   └── LogLensPanel.ts    # Webview panel manager
-│   └── parsers/               # File format parsers
-│       ├── csvParser.ts       # CSV parsing orchestrator
-│       ├── javaNotationParser.ts # Java-style {key=value} parser
-│       └── timestampUtils.ts  # Unix epoch timestamp detection
-├── webview-ui/                # React webview UI
-│   ├── src/
-│   │   ├── components/        # React components
-│   │   ├── store/            # Zustand state management
-│   │   ├── hooks/            # Custom React hooks
-│   │   ├── utils/            # Utility functions
-│   │   └── types.ts          # TypeScript types
-│   └── package.json
-├── test/                       # Test fixtures
-│   └── sample-athena-export.csv
-└── package.json
+│   │   ├── LogLensPanel.ts     # Webview panel manager + messaging
+│   │   └── LogLensStatusBar.ts # Status bar item
+│   ├── parsers/                # csvParser, javaNotationParser, timestampUtils
+│   ├── views/recentFiles.ts    # Recent-files tree view (globalState)
+│   └── utilities/              # getNonce, getUri
+├── webview-ui/                 # React UI (Vite)
+│   └── src/
+│       ├── components/         # QueryBar, QueryEditor, SearchBar, Histogram,
+│       │                       # LogTable/LogList/LogRow, Sidebar, TraceModal, …
+│       ├── lib/logql/          # LogQL tokenizer, parser, evaluator, serializer
+│       ├── store/              # Zustand store
+│       ├── hooks/ utils/ types # field discovery, mapping, helpers
+└── assets/                     # icon + hero + logo sources
 ```
 
-### Technologies Used
-
-- **VS Code Extension API** - Extension host integration
-- **React 18** - UI framework
-- **TypeScript** - Type-safe development
-- **Zustand** - Lightweight state management
-- **react-window** - Virtualized list rendering for performance
-- **@xyflow/react** - Interactive node-based graph visualization
-- **@dagrejs/dagre** - Directed graph layout algorithm
-- **csv-parse** - RFC 4180 CSV parsing
-- **Vite** - Fast development and build tooling
-- **Lucide React** - Icon library
-
-### Available Scripts
+Scripts:
 
 ```bash
-# Install all dependencies
-npm run install:all
-
-# Start development server for webview UI
-npm run start:webview
-
-# Build webview UI for production
-npm run build:webview
-
-# Compile TypeScript for extension
-npm run compile
-
-# Watch mode for development
-npm run watch
-
-# Lint and format code
-npm run lint
-npm run format
+npm run install:all      # install all dependencies
+npm run start:webview    # Vite dev server for the webview
+npm run build:webview    # production build of the webview
+npm run compile          # compile the extension TypeScript
+npm run watch            # compile in watch mode
+npm run lint             # lint the extension sources
 ```
+
+Built with the VS Code Extension API, React 18, TypeScript, Zustand,
+react-window, @xyflow/react + @dagrejs/dagre (service map), csv-parse, Vite and
+Lucide icons. The query language is a small self-contained LogQL implementation
+under `webview-ui/src/lib/logql`.
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit issues and pull requests.
+Contributions are welcome — please open an issue or a pull request.
 
 ## License
 
-This project is licensed under the [Apache-2.0 License](LICENSE).
+Licensed under the [Apache-2.0 License](LICENSE).
 
 ## Support
 
-For bugs and feature requests, please create an issue on the [GitHub repository](https://github.com/sabeesoft/log-lens).
+For bugs and feature requests, open an issue on the
+[GitHub repository](https://github.com/sabeesoft/log-lens).

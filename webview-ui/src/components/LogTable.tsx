@@ -115,7 +115,11 @@ export default function LogTable({
     updateHeight();
     const ro = new ResizeObserver(updateHeight);
     if (containerRef.current) ro.observe(containerRef.current);
-    return () => ro.disconnect();
+    window.addEventListener('resize', updateHeight);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', updateHeight);
+    };
   }, [updateHeight]);
 
   const isLevelCol = (col: string) => {
