@@ -97,6 +97,12 @@ export default function QueryEditor({
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  // When the editor height changes, nudge the virtualized list to re-measure so
+  // its bottom rows aren't left hidden behind the taller editor.
+  useEffect(() => {
+    window.dispatchEvent(new Event('resize'));
+  }, [editorPx]);
+
   // Measure character width (monospace)
   useLayoutEffect(() => {
     if (charRef.current) {
@@ -303,7 +309,7 @@ export default function QueryEditor({
             }}
           >
             {value.length === 0 ? (
-              <span style={{ color: 'var(--vscode-panel-border, #4b4b53)' }}>
+              <span style={{ color: 'var(--vscode-input-placeholderForeground, var(--vscode-descriptionForeground, #8a8a8a))' }}>
                 {'fields @timestamp, level, message | filter level = "error" | sort @timestamp desc'}
               </span>
             ) : (
@@ -363,7 +369,10 @@ export default function QueryEditor({
               font: FONT,
               lineHeight: `${LINE_HEIGHT}px`,
               whiteSpace: 'pre',
-              overflow: 'auto',
+              // Only show a scrollbar once we hit the height cap, not while the
+              // editor is still free to grow.
+              overflowX: 'auto',
+              overflowY: contentPx > maxPx ? 'auto' : 'hidden',
               color: 'transparent',
               caretColor: 'var(--vscode-foreground, #e4e4e7)',
               boxSizing: 'border-box',
@@ -377,18 +386,23 @@ export default function QueryEditor({
             title="Clear query (show all)"
             style={{
               position: 'absolute',
-              right: '6px',
-              top: '6px',
-              background: 'rgba(26,26,26,0.8)',
-              border: 'none',
+              // clear the scrollbar gutter when the editor is scrolling
+              right: contentPx > maxPx ? '14px' : '7px',
+              top: '7px',
+              width: '18px',
+              height: '18px',
+              background: 'var(--vscode-editorWidget-background, #252526)',
+              border: '1px solid var(--vscode-panel-border, #3a3a3a)',
               cursor: 'pointer',
-              padding: '3px',
-              color: 'var(--vscode-descriptionForeground, #71717a)',
+              padding: 0,
+              color: 'var(--vscode-descriptionForeground, #9db2c4)',
               display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               borderRadius: '4px',
             }}
           >
-            <span style={{ fontSize: 14, lineHeight: 1 }}>×</span>
+            <span style={{ fontSize: 13, lineHeight: 1 }}>×</span>
           </button>
         )}
       </div>

@@ -554,12 +554,14 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
             </div>
           </div>
 
-          {/* Resize Handle */}
+          {/* Resize Handle (doubles as the graph/logs separator) */}
           <div
             onMouseDown={handleResizeStart}
             style={{
               height: '6px',
               backgroundColor: isResizing ? 'var(--vscode-charts-blue, #3b82f6)' : 'var(--vscode-editorWidget-background, #222)',
+              borderTop: '1px solid var(--vscode-panel-border, #3a3a3a)',
+              borderBottom: '1px solid var(--vscode-panel-border, #3a3a3a)',
               cursor: 'ns-resize',
               transition: 'background-color 0.15s',
               flexShrink: 0
