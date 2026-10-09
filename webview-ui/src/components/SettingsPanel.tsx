@@ -1,11 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { X, Search } from 'lucide-react';
+import { X } from 'lucide-react';
 import FilterSection from './FilterSection';
 import OrderBySection from './OrderBySection';
 import FieldVisibilitySection from './FieldVisibilitySection';
 import FieldDepthSection from './FieldDepthSection';
 import { Filter } from '../types';
-import { useLogStore } from '../store/logStore';
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -72,10 +71,6 @@ export default function SettingsPanel({
   const [width, setWidth] = useState(getDefaultWidth);
   const [isResizing, setIsResizing] = useState(false);
 
-  // Free-text search lives here (hidden out of the main toolbar)
-  const searchTerm = useLogStore((s) => s.searchTerm);
-  const setSearchTerm = useLogStore((s) => s.setSearchTerm);
-  const triggerSearch = useLogStore((s) => s.triggerSearch);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -196,56 +191,7 @@ export default function SettingsPanel({
             padding: '12px'
           }}
         >
-          {/* Free-text search */}
-          <div style={{ marginBottom: '8px' }}>
-            <div
-              style={{
-                fontSize: '11px',
-                fontWeight: 600,
-                color: 'var(--vscode-descriptionForeground, #71717a)',
-                fontFamily: 'monospace',
-                marginBottom: '6px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-              }}
-            >
-              Free-text search
-            </div>
-            <div style={{ position: 'relative' }}>
-              <Search
-                size={13}
-                color="var(--vscode-disabledForeground, #52525b)"
-                style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}
-              />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') triggerSearch();
-                  else if (e.key === 'Escape') {
-                    setSearchTerm('');
-                    triggerSearch();
-                  }
-                }}
-                placeholder="Search across all fields… (Enter)"
-                style={{
-                  width: '100%',
-                  padding: '8px 10px 8px 30px',
-                  backgroundColor: 'var(--vscode-editorWidget-background, #1a1a1a)',
-                  border: '1px solid',
-                  borderColor: searchTerm ? 'var(--vscode-charts-blue, #3b82f6)' : 'var(--vscode-panel-border, #333)',
-                  borderRadius: '6px',
-                  fontSize: '12.5px',
-                  color: 'var(--vscode-foreground, #e4e4e7)',
-                  fontFamily: 'monospace',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-              />
-            </div>
-          </div>
-
+          {/* Free-text search lives in the main toolbar's Search mode now */}
           <FilterSection
             filters={filters}
             allFields={allFields}
