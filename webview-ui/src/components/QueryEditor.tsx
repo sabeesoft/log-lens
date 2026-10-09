@@ -2,31 +2,34 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { tokenize } from '../lib/logql';
 import type { Token, TokenType, ParseError } from '../lib/logql';
 
-// Token colors mapped to VS Code's debug-token theme variables so the query
-// editor's syntax highlighting follows the active color theme.
+// The base text uses the input foreground so it is always legible; only a few
+// token kinds get an accent, with high-contrast fallbacks.
+const BASE_TEXT = 'var(--vscode-input-foreground, var(--vscode-editor-foreground, #e6edf3))';
 const TOKEN_COLORS: Partial<Record<TokenType, string>> = {
   string: 'var(--vscode-debugTokenExpression-string, #ce9178)',
-  regex: 'var(--vscode-debugTokenExpression-error, #d16969)',
+  regex: 'var(--vscode-debugTokenExpression-error, #ce9178)',
   number: 'var(--vscode-debugTokenExpression-number, #b5cea8)',
-  bool: 'var(--vscode-debugTokenExpression-boolean, #569cd6)',
-  op: 'var(--vscode-foreground, #d4d4d4)',
-  pipe: 'var(--vscode-disabledForeground, #6b7280)',
-  ident: 'var(--vscode-debugTokenExpression-name, #9cdcfe)',
-  lparen: 'var(--vscode-foreground, #d4d4d4)',
-  rparen: 'var(--vscode-foreground, #d4d4d4)',
-  lbracket: 'var(--vscode-foreground, #d4d4d4)',
-  rbracket: 'var(--vscode-foreground, #d4d4d4)',
-  comma: 'var(--vscode-foreground, #d4d4d4)',
+  bool: 'var(--vscode-charts-blue, #4fc1ff)',
+  op: BASE_TEXT,
+  pipe: 'var(--vscode-descriptionForeground, #9db2c4)',
+  ident: BASE_TEXT,
+  lparen: BASE_TEXT,
+  rparen: BASE_TEXT,
+  lbracket: BASE_TEXT,
+  rbracket: BASE_TEXT,
+  comma: BASE_TEXT,
 };
 const COMMAND_KW = new Set(['fields', 'filter', 'sort', 'limit']);
 const keywordColor = (value: string) =>
   COMMAND_KW.has(value)
-    ? 'var(--vscode-debugTokenExpression-boolean, #569cd6)'
+    ? 'var(--vscode-charts-blue, #4fc1ff)'
     : 'var(--vscode-symbolIcon-keywordForeground, #c586c0)';
 
 const FONT = "13px 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace";
 const LINE_HEIGHT = 20;
-const PAD = 8;
+// PAD is tuned so a single-line editor (20 + 2*7 = 34, +2 border) is 36px tall,
+// matching the 34px + border controls — the Search/Query toggle doesn't jump.
+const PAD = 7;
 
 const ALL_KEYWORDS = [
   'fields',
@@ -69,6 +72,7 @@ export default function QueryEditor({
   const hasErrors = errors.length > 0;
   const taRef = useRef<HTMLTextAreaElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
+  const gutterRef = useRef<HTMLDivElement>(null);
   const charRef = useRef<HTMLSpanElement>(null);
   const activeLiRef = useRef<HTMLLIElement>(null);
 
@@ -77,9 +81,21 @@ export default function QueryEditor({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [caret, setCaret] = useState({ top: 0, left: 0 });
+  // Cap the editor at 30% of the viewport; it scrolls internally beyond that.
+  const [maxPx, setMaxPx] = useState(() =>
+    typeof window !== 'undefined' ? Math.round(window.innerHeight * 0.3) : 300
+  );
 
   const lines = value.length === 0 ? 1 : value.split('\n').length;
   const gutterWidth = Math.max(28, String(lines).length * 8 + 16);
+  const contentPx = lines * LINE_HEIGHT + PAD * 2;
+  const editorPx = Math.min(contentPx, maxPx);
+
+  useEffect(() => {
+    const onResize = () => setMaxPx(Math.round(window.innerHeight * 0.3));
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   // Measure character width (monospace)
   useLayoutEffect(() => {
@@ -97,6 +113,9 @@ export default function QueryEditor({
     if (preRef.current && taRef.current) {
       preRef.current.scrollTop = taRef.current.scrollTop;
       preRef.current.scrollLeft = taRef.current.scrollLeft;
+    }
+    if (gutterRef.current && taRef.current) {
+      gutterRef.current.scrollTop = taRef.current.scrollTop;
     }
   };
 
@@ -229,6 +248,7 @@ export default function QueryEditor({
         style={{
           position: 'relative',
           display: 'flex',
+          height: editorPx,
           backgroundColor: 'var(--vscode-editorWidget-background, #1a1a1a)',
           border: `1px solid ${borderColor}`,
           borderRadius: '6px',
@@ -238,11 +258,15 @@ export default function QueryEditor({
       >
         {/* Gutter */}
         <div
+          ref={gutterRef}
           aria-hidden
           style={{
             width: gutterWidth,
             flexShrink: 0,
+            height: '100%',
+            overflow: 'hidden',
             padding: `${PAD}px 0`,
+            boxSizing: 'border-box',
             backgroundColor: 'var(--vscode-sideBar-background, #161616)',
             borderRight: '1px solid var(--vscode-input-background, #262626)',
             font: FONT,
@@ -260,7 +284,7 @@ export default function QueryEditor({
         </div>
 
         {/* Editor area */}
-        <div style={{ position: 'relative', flex: 1, minHeight: LINE_HEIGHT + PAD * 2 }}>
+        <div style={{ position: 'relative', flex: 1, height: '100%' }}>
           {/* Highlight layer */}
           <pre
             ref={preRef}
@@ -275,7 +299,7 @@ export default function QueryEditor({
               position: 'absolute',
               inset: 0,
               pointerEvents: 'none',
-              color: 'var(--vscode-foreground, #d4d4d8)',
+              color: BASE_TEXT,
             }}
           >
             {value.length === 0 ? (
@@ -323,13 +347,13 @@ export default function QueryEditor({
               updateSuggestions();
             }}
             spellCheck={false}
-            rows={Math.min(Math.max(lines, 1), 8)}
             style={{
               display: 'block',
               position: 'relative',
               width: '100%',
-              minHeight: LINE_HEIGHT + PAD * 2,
-              // auto-grow by content (rows); no manual drag-resize (kept layers in sync)
+              height: '100%',
+              // height is driven by the container (dynamic, capped at 30vh); the
+              // textarea scrolls internally and the gutter/highlight sync to it
               resize: 'none',
               padding: `${PAD}px ${PAD}px`,
               margin: 0,
@@ -437,8 +461,8 @@ interface Segment {
   start: number;
 }
 
-const DEFAULT_COLOR = 'var(--vscode-foreground, #d4d4d8)';
-const COMMENT_COLOR = 'var(--vscode-editorLineNumber-foreground, #6a9955)';
+const DEFAULT_COLOR = BASE_TEXT;
+const COMMENT_COLOR = 'var(--vscode-descriptionForeground, #6a9955)';
 
 // Gaps between tokens may contain whitespace and `#` line comments; color the
 // comment part so commented-out lines read as disabled.

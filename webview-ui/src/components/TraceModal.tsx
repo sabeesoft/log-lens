@@ -54,7 +54,7 @@ function ServiceNodeComponent({ data }: { data: CustomNodeData }) {
       style={{
         padding: '12px 16px',
         borderRadius: '8px',
-        backgroundColor: nodeData.isSelected ? 'var(--vscode-editorWidget-background, #1a1a1a)' : 'var(--vscode-sideBar-background, #111)',
+        backgroundColor: nodeData.isSelected ? 'var(--vscode-list-activeSelectionBackground, #1a2740)' : 'var(--vscode-editorWidget-background, #1e1e1e)',
         border: `2px solid ${nodeData.isSelected ? 'var(--vscode-textLink-foreground, #60a5fa)' : getBorderColor()}`,
         boxShadow: nodeData.isSelected
           ? '0 0 0 2px rgba(96, 165, 250, 0.3), 0 4px 12px rgba(0, 0, 0, 0.4)'
@@ -511,7 +511,7 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
               fitViewOptions={{ padding: 0.3 }}
               proOptions={{ hideAttribution: true }}
             >
-              <Background color={resolveCssVar('--vscode-editorWidget-background', '#1a1a1a')} gap={20} />
+              <Background color={resolveCssVar('--vscode-panel-border', '#333')} gap={22} size={1.5} />
               <Controls
                 style={{
                   backgroundColor: 'var(--vscode-sideBar-background, #111)',

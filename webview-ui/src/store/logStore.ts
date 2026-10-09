@@ -322,16 +322,9 @@ export const useLogStore = create<LogState>((set, get) => ({
   }),
 
   // LogQL query actions
-  setQueryText: (text) => {
-    // Live lint: surface syntax errors as the user types, without applying.
-    // Offsets are taken against the raw text so editor squiggles line up.
-    if (!text.trim()) {
-      set({ queryText: text, queryErrors: null });
-      return;
-    }
-    const result = parse(text);
-    set({ queryText: text, queryErrors: result.ok ? null : result.errors });
-  },
+  // Typing never validates or filters — the query is only parsed/applied on Run
+  // (⌘/Ctrl+Enter or the Run button). Clear any stale errors as the text changes.
+  setQueryText: (text) => set((state) => ({ queryText: text, queryErrors: state.queryErrors ? null : state.queryErrors })),
 
   runQuery: (text) => {
     const input = text !== undefined ? text : get().queryText;
