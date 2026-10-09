@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { LogEntry } from '../types';
 import { autoDetectTimestampField, autoDetectLevelField, getLogLevel } from '../utils/fieldMapping';
 
-const BUCKETS = 90;
+const MAX_BUCKETS = 90;
 const BAR_PX = 28;
 
 // Parse a raw timestamp value to epoch milliseconds.
@@ -50,10 +50,12 @@ export default function Histogram({ logs }: { logs: LogEntry[] }) {
     }
     if (times.length < 2 || max <= min) return null;
 
+    // Adaptive bucket count: dense bars for small files, up to 90 for large ones.
+    const count = Math.max(12, Math.min(MAX_BUCKETS, Math.ceil(times.length / 2)));
     const span = max - min;
-    const buckets: Bucket[] = Array.from({ length: BUCKETS }, () => ({ n: 0, e: 0, w: 0 }));
+    const buckets: Bucket[] = Array.from({ length: count }, () => ({ n: 0, e: 0, w: 0 }));
     for (const { t, lvl } of times) {
-      const idx = Math.min(BUCKETS - 1, Math.floor(((t - min) / span) * BUCKETS));
+      const idx = Math.min(count - 1, Math.floor(((t - min) / span) * count));
       const b = buckets[idx];
       b.n++;
       if (lvl === 'error' || lvl === 'fatal') b.e++;
@@ -75,8 +77,10 @@ export default function Histogram({ logs }: { logs: LogEntry[] }) {
         flexDirection: 'column',
         gap: '4px',
         padding: '6px 12px',
+        borderTop: '1px solid var(--vscode-panel-border, #2b2b2b)',
         borderBottom: '1px solid var(--vscode-panel-border, #2b2b2b)',
-        backgroundColor: 'var(--vscode-sideBar-background, #121a24)',
+        // A distinct widget surface so the chart stands apart from the editor/list
+        backgroundColor: 'var(--vscode-editorWidget-background, #252526)',
       }}
     >
       {/* Bars sit on a baseline so the strip reads as a chart */}
@@ -86,7 +90,7 @@ export default function Histogram({ logs }: { logs: LogEntry[] }) {
           display: 'flex',
           alignItems: 'flex-end',
           gap: '1px',
-          borderBottom: '1px solid var(--vscode-panel-border, #3a4a5a)',
+          borderBottom: '1px solid var(--vscode-descriptionForeground, #5a5a5a)',
         }}
       >
         {data.buckets.map((b, i) => {
