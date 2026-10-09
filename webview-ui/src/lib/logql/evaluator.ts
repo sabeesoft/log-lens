@@ -155,7 +155,9 @@ function toBool(v: unknown): boolean | null {
 
 function like(actual: unknown, pattern: string, caseInsensitive: boolean): boolean {
   if (actual === undefined || actual === null) return false;
-  const text = String(actual);
+  // Object/array fields (e.g. a CloudWatch `@message` container) are matched
+  // against their JSON text, so `like` behaves like a free-text substring search.
+  const text = typeof actual === 'object' ? stringifyRecord(actual) : String(actual);
 
   // /regex/ form
   if (pattern.length >= 2 && pattern.startsWith('/') && pattern.endsWith('/')) {

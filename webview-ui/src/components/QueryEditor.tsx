@@ -23,7 +23,7 @@ const COMMAND_KW = new Set(['fields', 'filter', 'sort', 'limit']);
 const keywordColor = (value: string) =>
   COMMAND_KW.has(value)
     ? 'var(--vscode-charts-blue, #4fc1ff)'
-    : 'var(--vscode-symbolIcon-keywordForeground, #c586c0)';
+    : 'var(--vscode-charts-purple, #c586c0)';
 
 const FONT = "13px 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace";
 const LINE_HEIGHT = 20;
