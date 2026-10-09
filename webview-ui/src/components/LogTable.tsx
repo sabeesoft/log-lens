@@ -63,9 +63,17 @@ function renderCell(log: LogEntry, col: string, isLevel: boolean): React.ReactNo
     );
   }
   if (typeof raw === 'object') {
-    // Show the raw JSON value (truncated by the cell), not just the keys
+    // Object/array values get a compact badge (keys, or size when large) rather
+    // than a raw blob, so rows stay one line. Full value is in the tooltip.
     const json = JSON.stringify(raw);
-    return <span style={{ color: 'var(--vscode-disabledForeground, #8b8b94)' }} title={json}>{json}</span>;
+    const isArray = Array.isArray(raw);
+    const count = isArray ? raw.length : Object.keys(raw).length;
+    const label = json.length > 1024 ? `${(json.length / 1024).toFixed(1)} KB` : `${count} ${isArray ? 'items' : 'keys'}`;
+    return (
+      <span style={{ color: 'var(--vscode-disabledForeground, #8b8b94)' }} title={json}>
+        {isArray ? '[' : '{'}…{isArray ? ']' : '}'} <span style={{ opacity: 0.8 }}>{label}</span>
+      </span>
+    );
   }
   return String(raw);
 }

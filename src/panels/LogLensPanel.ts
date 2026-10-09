@@ -1,4 +1,4 @@
-import { Disposable, Webview, WebviewPanel, window, Uri, ViewColumn } from "vscode";
+import { Disposable, Webview, WebviewPanel, window, workspace, Uri, ViewColumn } from "vscode";
 import { getUri } from "../utilities/getUri";
 import { getNonce } from "../utilities/getNonce";
 import { logLensStatusBar } from "./LogLensStatusBar";
@@ -260,6 +260,14 @@ export class LogLensPanel {
               if (LogLensPanel.activePanel === this) {
                 this._updateStatusBar();
               }
+            }
+            return;
+          case "openAsJson":
+            // Open the full record in a normal JSON editor for folding & search.
+            if (typeof message.content === "string") {
+              workspace
+                .openTextDocument({ content: message.content, language: "json" })
+                .then((doc) => window.showTextDocument(doc, ViewColumn.Beside));
             }
             return;
         }

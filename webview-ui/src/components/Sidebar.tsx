@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
-import { X, Copy, Check, ExternalLink } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+import { X, Copy, Check, ExternalLink, FileJson } from 'lucide-react';
 import { LogEntry } from '../types';
 import { useLogStore } from '../store/logStore';
 import { getTraceIdValue, detectTraceConfig, getServiceValue } from '../utils/traceUtils';
+import { postToHost } from '../utils/vscodeApi';
 
 interface SidebarProps {
   log: LogEntry | null;
@@ -18,25 +19,92 @@ const DEFAULT_WIDTH_PERCENT = 40;
 const getMaxWidth = () => Math.max(MIN_WIDTH, Math.floor(window.innerWidth * MAX_WIDTH_PERCENT / 100));
 const getDefaultWidth = () => Math.max(MIN_WIDTH, Math.floor(window.innerWidth * DEFAULT_WIDTH_PERCENT / 100));
 
+// Anything whose text is longer than this collapses behind a caret, so rows
+// never blow up — one affordance (the ▸ caret) for objects, arrays and strings.
+const LONG_VALUE = 160;
+
+const keyStyle = { color: 'var(--vscode-textLink-foreground, #60a5fa)' };
+const muted = { color: 'var(--vscode-descriptionForeground, #71717a)' };
+const Caret = ({ open }: { open: boolean }) => (
+  <span style={{ ...muted, marginRight: '4px' }}>{open ? '▼' : '▶'}</span>
+);
+
+const isLargeObject = (value: any): boolean => {
+  const count = Array.isArray(value) ? value.length : Object.keys(value).length;
+  if (count > 12) return true;
+  try {
+    return JSON.stringify(value).length > LONG_VALUE;
+  } catch {
+    return false;
+  }
+};
+
 const TreeNode = ({ value, nodeKey, depth }: { value: any; nodeKey: string | null; depth: number }) => {
-  const [expanded, setExpanded] = useState(depth < 2);
+  const isObject = value !== null && typeof value === 'object';
+  const isLongString = typeof value === 'string' && value.length > LONG_VALUE;
+  // Collapsed by default when deep or large; strings start collapsed when long.
+  const [expanded, setExpanded] = useState(
+    isObject ? depth < 2 && !isLargeObject(value) : !isLongString
+  );
   const indent = depth * 16;
 
   if (value === null || value === undefined) {
     return (
       <div style={{ marginLeft: `${indent}px`, fontFamily: 'monospace', fontSize: '11px' }}>
-        {nodeKey && <span style={{ color: 'var(--vscode-textLink-foreground, #60a5fa)' }}>{nodeKey}: </span>}
-        <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>{String(value)}</span>
+        {nodeKey && <span style={keyStyle}>{nodeKey}: </span>}
+        <span style={muted}>{String(value)}</span>
+      </div>
+    );
+  }
+
+  // Long strings and stack traces: same caret affordance as objects.
+  if (typeof value === 'string') {
+    if (!isLongString) {
+      return (
+        <div style={{ marginLeft: `${indent}px`, fontFamily: 'monospace', fontSize: '11px' }}>
+          {nodeKey && <span style={keyStyle}>{nodeKey}: </span>}
+          <span style={{ color: 'var(--vscode-charts-green, #34d399)' }}>"{value}"</span>
+        </div>
+      );
+    }
+    return (
+      <div style={{ marginLeft: `${indent}px`, fontFamily: 'monospace', fontSize: '11px' }}>
+        <div onClick={() => setExpanded(!expanded)} style={{ cursor: 'pointer', userSelect: 'none' }}>
+          <Caret open={expanded} />
+          {nodeKey && <span style={keyStyle}>{nodeKey}: </span>}
+          {!expanded && (
+            <>
+              <span style={{ color: 'var(--vscode-charts-green, #34d399)' }}>
+                "{value.slice(0, 80)}…"
+              </span>
+              <span style={{ ...muted, marginLeft: '6px' }}>{value.length} chars</span>
+            </>
+          )}
+        </div>
+        {expanded && (
+          <div
+            style={{
+              marginLeft: '16px',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              color: 'var(--vscode-charts-green, #34d399)',
+              maxHeight: '240px',
+              overflow: 'auto',
+            }}
+          >
+            {value}
+          </div>
+        )}
       </div>
     );
   }
 
   if (typeof value !== 'object') {
-    const color = typeof value === 'string' ? 'var(--vscode-charts-green, #34d399)' : typeof value === 'boolean' ? 'var(--vscode-charts-yellow, #f59e0b)' : 'var(--vscode-charts-purple, #a78bfa)';
+    const color = typeof value === 'boolean' ? 'var(--vscode-charts-yellow, #f59e0b)' : 'var(--vscode-charts-purple, #a78bfa)';
     return (
       <div style={{ marginLeft: `${indent}px`, fontFamily: 'monospace', fontSize: '11px' }}>
-        {nodeKey && <span style={{ color: 'var(--vscode-textLink-foreground, #60a5fa)' }}>{nodeKey}: </span>}
-        <span style={{ color }}>{typeof value === 'string' ? `"${value}"` : String(value)}</span>
+        {nodeKey && <span style={keyStyle}>{nodeKey}: </span>}
+        <span style={{ color }}>{String(value)}</span>
       </div>
     );
   }
@@ -45,6 +113,7 @@ const TreeNode = ({ value, nodeKey, depth }: { value: any; nodeKey: string | nul
     const isArray = Array.isArray(value);
     const entries = isArray ? value.map((v, i) => [String(i), v]) : Object.entries(value);
     const bracket = isArray ? ['[', ']'] : ['{', '}'];
+    const summary = isArray ? `${entries.length} items` : `${entries.length} keys`;
 
     return (
       <div style={{ marginLeft: `${indent}px`, fontFamily: 'monospace', fontSize: '11px' }}>
@@ -52,18 +121,18 @@ const TreeNode = ({ value, nodeKey, depth }: { value: any; nodeKey: string | nul
           onClick={() => setExpanded(!expanded)}
           style={{ cursor: 'pointer', color: 'var(--vscode-foreground, #d4d4d8)', userSelect: 'none' }}
         >
-          <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)', marginRight: '4px' }}>{expanded ? '▼' : '▶'}</span>
-          {nodeKey && <span style={{ color: 'var(--vscode-textLink-foreground, #60a5fa)' }}>{nodeKey}: </span>}
-          <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>{bracket[0]}</span>
-          {!expanded && <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>...</span>}
-          {!expanded && <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>{bracket[1]}</span>}
+          <Caret open={expanded} />
+          {nodeKey && <span style={keyStyle}>{nodeKey}: </span>}
+          <span style={muted}>{bracket[0]}</span>
+          {!expanded && <span style={{ ...muted, margin: '0 2px' }}>… {summary}</span>}
+          {!expanded && <span style={muted}>{bracket[1]}</span>}
         </div>
         {expanded && (
           <>
             {entries.map(([k, v]) => (
               <TreeNode key={`${nodeKey || 'root'}-${k}`} value={v} nodeKey={k} depth={depth + 1} />
             ))}
-            <div style={{ marginLeft: `${indent}px`, color: 'var(--vscode-descriptionForeground, #71717a)' }}>{bracket[1]}</div>
+            <div style={{ marginLeft: `${indent}px`, ...muted }}>{bracket[1]}</div>
           </>
         )}
       </div>
@@ -71,7 +140,7 @@ const TreeNode = ({ value, nodeKey, depth }: { value: any; nodeKey: string | nul
   } catch (error) {
     return (
       <div style={{ marginLeft: `${indent}px`, fontFamily: 'monospace', fontSize: '11px', color: 'var(--vscode-charts-red, #ef4444)' }}>
-        {nodeKey && <span style={{ color: 'var(--vscode-textLink-foreground, #60a5fa)' }}>{nodeKey}: </span>}
+        {nodeKey && <span style={keyStyle}>{nodeKey}: </span>}
         <span>[Error rendering value]</span>
       </div>
     );
@@ -87,6 +156,34 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
   // Get logs and openTraceModal from store
   const logs = useLogStore((state) => state.logs);
   const openTraceModal = useLogStore((state) => state.openTraceModal);
+  const stepSelection = useLogStore((state) => state.stepSelection);
+  const fileName = useLogStore((state) => state.fileName);
+
+  // ↑/↓ step through rows while the panel is open (ignored while typing).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
+        return;
+      }
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable) {
+        return;
+      }
+      e.preventDefault();
+      stepSelection(e.key === 'ArrowDown' ? 1 : -1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [stepSelection]);
+
+  const openAsJsonTab = useCallback(() => {
+    if (log === null || log === undefined) {
+      return;
+    }
+    const content = typeof log === 'string' ? log : JSON.stringify(log, null, 2);
+    postToHost({ type: 'openAsJson', content, fileName });
+  }, [log, fileName]);
 
   // Detect trace config and get value from current log
   const traceConfig = detectTraceConfig(logs);
@@ -281,6 +378,25 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
             >
               {copied ? <Check size={14} /> : <Copy size={14} />}
               <span>{copied ? 'COPIED' : 'COPY'}</span>
+            </button>
+            <button
+              onClick={openAsJsonTab}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px 8px',
+                color: 'var(--vscode-descriptionForeground, #71717a)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '11px',
+                fontFamily: 'monospace'
+              }}
+              title="Open the full record in a JSON editor tab"
+            >
+              <FileJson size={14} />
+              <span>JSON TAB</span>
             </button>
             <button
               onClick={onClose}
