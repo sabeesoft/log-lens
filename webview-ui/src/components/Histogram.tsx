@@ -73,17 +73,27 @@ export default function Histogram({ logs }: { logs: LogEntry[] }) {
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',
-        gap: '3px',
-        padding: '2px 12px 6px',
-        borderBottom: '1px solid var(--vscode-editorWidget-background, #222)',
-        backgroundColor: 'var(--vscode-editor-background, #0d0d0d)',
+        gap: '4px',
+        padding: '6px 12px',
+        borderBottom: '1px solid var(--vscode-panel-border, #2b2b2b)',
+        backgroundColor: 'var(--vscode-sideBar-background, #121a24)',
       }}
     >
-      <div style={{ height: BAR_PX, display: 'flex', alignItems: 'flex-end', gap: '1px' }}>
+      {/* Bars sit on a baseline so the strip reads as a chart */}
+      <div
+        style={{
+          height: BAR_PX,
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: '1px',
+          borderBottom: '1px solid var(--vscode-panel-border, #3a4a5a)',
+        }}
+      >
         {data.buckets.map((b, i) => {
-          const errH = h(b.e);
-          const warnH = h(b.w);
-          const restH = Math.max(0, h(b.n) - errH - warnH);
+          const total = b.n ? Math.max(2, h(b.n)) : 0;
+          const errH = b.e ? Math.max(1, h(b.e)) : 0;
+          const warnH = b.w ? Math.max(1, h(b.w)) : 0;
+          const restH = Math.max(0, total - errH - warnH);
           const label = `${b.n} log${b.n === 1 ? '' : 's'}${b.e ? ` · ${b.e} error` : ''}${b.w ? ` · ${b.w} warn` : ''}`;
           return (
             <div
@@ -93,7 +103,7 @@ export default function Histogram({ logs }: { logs: LogEntry[] }) {
             >
               <div style={{ height: errH, background: 'var(--vscode-charts-red, #f14c4c)' }} />
               <div style={{ height: warnH, background: 'var(--vscode-charts-yellow, #cca700)' }} />
-              <div style={{ height: restH, background: 'var(--vscode-charts-blue, #3b6ea5)', opacity: 0.55 }} />
+              <div style={{ height: restH, background: 'var(--vscode-charts-blue, #4a9eff)' }} />
             </div>
           );
         })}
@@ -103,7 +113,7 @@ export default function Histogram({ logs }: { logs: LogEntry[] }) {
           display: 'flex',
           justifyContent: 'space-between',
           fontSize: '10px',
-          color: 'var(--vscode-disabledForeground, #71717a)',
+          color: 'var(--vscode-descriptionForeground, #9db2c4)',
           fontFamily: 'monospace',
         }}
       >

@@ -2,26 +2,27 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { tokenize } from '../lib/logql';
 import type { Token, TokenType, ParseError } from '../lib/logql';
 
-// Token colors mapped to VS Code's debug-token theme variables so the query
-// editor's syntax highlighting follows the active color theme.
+// The base text uses the input foreground so it is always legible; only a few
+// token kinds get an accent, with high-contrast fallbacks.
+const BASE_TEXT = 'var(--vscode-input-foreground, var(--vscode-editor-foreground, #e6edf3))';
 const TOKEN_COLORS: Partial<Record<TokenType, string>> = {
   string: 'var(--vscode-debugTokenExpression-string, #ce9178)',
-  regex: 'var(--vscode-debugTokenExpression-error, #d16969)',
+  regex: 'var(--vscode-debugTokenExpression-error, #ce9178)',
   number: 'var(--vscode-debugTokenExpression-number, #b5cea8)',
-  bool: 'var(--vscode-debugTokenExpression-boolean, #569cd6)',
-  op: 'var(--vscode-foreground, #d4d4d4)',
-  pipe: 'var(--vscode-disabledForeground, #6b7280)',
-  ident: 'var(--vscode-debugTokenExpression-name, #9cdcfe)',
-  lparen: 'var(--vscode-foreground, #d4d4d4)',
-  rparen: 'var(--vscode-foreground, #d4d4d4)',
-  lbracket: 'var(--vscode-foreground, #d4d4d4)',
-  rbracket: 'var(--vscode-foreground, #d4d4d4)',
-  comma: 'var(--vscode-foreground, #d4d4d4)',
+  bool: 'var(--vscode-charts-blue, #4fc1ff)',
+  op: BASE_TEXT,
+  pipe: 'var(--vscode-descriptionForeground, #9db2c4)',
+  ident: BASE_TEXT,
+  lparen: BASE_TEXT,
+  rparen: BASE_TEXT,
+  lbracket: BASE_TEXT,
+  rbracket: BASE_TEXT,
+  comma: BASE_TEXT,
 };
 const COMMAND_KW = new Set(['fields', 'filter', 'sort', 'limit']);
 const keywordColor = (value: string) =>
   COMMAND_KW.has(value)
-    ? 'var(--vscode-debugTokenExpression-boolean, #569cd6)'
+    ? 'var(--vscode-charts-blue, #4fc1ff)'
     : 'var(--vscode-symbolIcon-keywordForeground, #c586c0)';
 
 const FONT = "13px 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace";
@@ -298,7 +299,7 @@ export default function QueryEditor({
               position: 'absolute',
               inset: 0,
               pointerEvents: 'none',
-              color: 'var(--vscode-foreground, #d4d4d8)',
+              color: BASE_TEXT,
             }}
           >
             {value.length === 0 ? (
@@ -460,8 +461,8 @@ interface Segment {
   start: number;
 }
 
-const DEFAULT_COLOR = 'var(--vscode-foreground, #d4d4d8)';
-const COMMENT_COLOR = 'var(--vscode-editorLineNumber-foreground, #6a9955)';
+const DEFAULT_COLOR = BASE_TEXT;
+const COMMENT_COLOR = 'var(--vscode-descriptionForeground, #6a9955)';
 
 // Gaps between tokens may contain whitespace and `#` line comments; color the
 // comment part so commented-out lines read as disabled.
