@@ -1,11 +1,13 @@
 import { useMemo } from 'react';
-import { Play, AlertCircle, Settings, FileText, Loader2, Network } from 'lucide-react';
+import { Play, AlertCircle, Settings, FileText, Loader2, Network, Search, Terminal } from 'lucide-react';
 import { useLogStore } from '../store/logStore';
 import { useLogFields } from '../hooks/useLogFields';
 import { autoDetectLevelField, autoDetectTimestampField } from '../utils/fieldMapping';
 import { detectServiceNameField } from '../utils/traceUtils';
 import { LogEntry } from '../types';
+import type { ViewMode } from '../store/logStore';
 import QueryEditor from './QueryEditor';
+import SearchBar from './SearchBar';
 
 function formatOf(fileName: string): string {
   const lower = fileName.toLowerCase();
@@ -23,6 +25,8 @@ function firstObject(logs: LogEntry[]): Record<string, any> | null {
 }
 
 export default function QueryBar() {
+  const mode = useLogStore((s) => s.mode);
+  const setMode = useLogStore((s) => s.setMode);
   const queryText = useLogStore((s) => s.queryText);
   const queryErrors = useLogStore((s) => s.queryErrors);
   const appliedQuery = useLogStore((s) => s.appliedQuery);
@@ -144,41 +148,49 @@ export default function QueryBar() {
       )}
 
       {/* Editor row */}
-      <div style={{ display: 'flex', gap: '8px', alignItems: multiline ? 'flex-start' : 'center' }}>
-        <QueryEditor
-          value={queryText}
-          onChange={setQueryText}
-          onRun={() => runQuery()}
-          onClear={clearQuery}
-          availableFields={availableFields}
-          active={isActive}
-          hasErrors={hasErrors}
-        />
+      <div style={{ display: 'flex', gap: '8px', alignItems: mode === 'query' && multiline ? 'flex-start' : 'center' }}>
+        <ModeToggle mode={mode} setMode={setMode} />
 
-        <button
-          onClick={() => runQuery()}
-          title="Run query (Ctrl/Cmd + Enter)"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '0 13px',
-            height: '34px',
-            backgroundColor: 'var(--vscode-charts-blue, #3b82f6)',
-            color: 'var(--vscode-foreground, #fff)',
-            borderRadius: '6px',
-            border: '1px solid var(--vscode-charts-blue, #3b82f6)',
-            cursor: 'pointer',
-            fontSize: '12px',
-            fontWeight: 600,
-            fontFamily: 'monospace',
-            whiteSpace: 'nowrap',
-            flexShrink: 0,
-          }}
-        >
-          <Play size={13} />
-          Run
-        </button>
+        {mode === 'search' ? (
+          <SearchBar />
+        ) : (
+          <>
+            <QueryEditor
+              value={queryText}
+              onChange={setQueryText}
+              onRun={() => runQuery()}
+              onClear={clearQuery}
+              availableFields={availableFields}
+              active={isActive}
+              hasErrors={hasErrors}
+            />
+
+            <button
+              onClick={() => runQuery()}
+              title="Run query (Ctrl/Cmd + Enter)"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '0 13px',
+                height: '34px',
+                backgroundColor: 'var(--vscode-charts-blue, #3b82f6)',
+                color: 'var(--vscode-foreground, #fff)',
+                borderRadius: '6px',
+                border: '1px solid var(--vscode-charts-blue, #3b82f6)',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 600,
+                fontFamily: 'monospace',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
+            >
+              <Play size={13} />
+              Run
+            </button>
+          </>
+        )}
 
         <button
           onClick={toggleSettingsPanel}
@@ -240,6 +252,57 @@ export default function QueryBar() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function ModeToggle({ mode, setMode }: { mode: ViewMode; setMode: (m: ViewMode) => void }) {
+  const options: { key: ViewMode; label: string; Icon: typeof Search }[] = [
+    { key: 'search', label: 'Search', Icon: Search },
+    { key: 'query', label: 'Query', Icon: Terminal },
+  ];
+  return (
+    <div
+      style={{
+        display: 'flex',
+        height: '34px',
+        padding: '3px',
+        gap: '2px',
+        backgroundColor: 'var(--vscode-editorWidget-background, #222)',
+        border: '1px solid var(--vscode-panel-border, #333)',
+        borderRadius: '6px',
+        flexShrink: 0,
+      }}
+    >
+      {options.map(({ key, label, Icon }) => {
+        const active = mode === key;
+        return (
+          <button
+            key={key}
+            onClick={() => setMode(key)}
+            title={`${label} mode`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '0 11px',
+              backgroundColor: active ? 'var(--vscode-charts-blue, #3b82f6)' : 'transparent',
+              color: active
+                ? 'var(--vscode-foreground, #fff)'
+                : 'var(--vscode-descriptionForeground, #a1a1aa)',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 600,
+              fontFamily: 'monospace',
+            }}
+          >
+            <Icon size={13} />
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }

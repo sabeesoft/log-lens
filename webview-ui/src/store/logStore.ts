@@ -2,8 +2,14 @@ import { create } from 'zustand';
 import { Filter, LogEntry } from '../types';
 import { parse, run, serialize } from '../lib/logql';
 import type { Query, ParseError } from '../lib/logql';
+import { autoDetectLevelField, getLogLevel } from '../utils/fieldMapping';
 
 const EMPTY_QUERY: Query = { fields: null, filter: null, sort: [], limit: null };
+
+export type ViewMode = 'search' | 'query';
+
+// Quote a free-text term for use as a LogQL bare term when it isn't a plain word.
+const toBareTerm = (term: string): string => (/^[\w.-]+$/.test(term) ? term : JSON.stringify(term));
 
 interface LogState {
   // Data
@@ -20,11 +26,13 @@ interface LogState {
   orderByDirection: 'asc' | 'desc';
 
   // UI state
+  mode: ViewMode;
   selectedLogIndex: number | null;
   visibleFields: string[];
   settingsPanelOpen: boolean;
   searchTerm: string;
   appliedSearchTerm: string;
+  activeLevels: string[];
   isFiltering: boolean;
 
   // Field depth settings
@@ -61,8 +69,10 @@ interface LogState {
   setVisibleFields: (fields: string[]) => void;
   toggleFieldVisibility: (field: string) => void;
   toggleSettingsPanel: () => void;
+  setMode: (mode: ViewMode) => void;
   setSearchTerm: (term: string) => void;
   triggerSearch: () => void;
+  toggleLevel: (level: string) => void;
 
   // Field depth actions
   setFieldDepth: (depth: number) => void;
@@ -152,11 +162,13 @@ export const useLogStore = create<LogState>((set, get) => ({
   appliedFilters: [],
   orderByField: '',
   orderByDirection: 'asc',
+  mode: 'search',
   selectedLogIndex: null,
   visibleFields: ['all'],
   settingsPanelOpen: false,
   searchTerm: '',
   appliedSearchTerm: '',
+  activeLevels: [],
   isFiltering: false,
   fieldDepth: 2,
   appliedFieldDepth: 2,
@@ -239,6 +251,25 @@ export const useLogStore = create<LogState>((set, get) => ({
 
   toggleSettingsPanel: () => set((state) => ({ settingsPanelOpen: !state.settingsPanelOpen })),
 
+  setMode: (mode) => {
+    if (mode === get().mode) {
+      return;
+    }
+    if (mode === 'query') {
+      // Prefill the pipeline from the current search so nothing is lost.
+      const { queryText, appliedSearchTerm, searchTerm } = get();
+      const seed = (searchTerm || appliedSearchTerm).trim();
+      set({ mode });
+      if (!queryText.trim() && seed) {
+        get().runQuery(toBareTerm(seed));
+      }
+    } else {
+      // Back to search: the query stops driving results, the search term does.
+      set({ mode, appliedQuery: null, queryErrors: null, isFiltering: true, selectedLogIndex: null });
+      get().computeFilteredLogs();
+    }
+  },
+
   setSearchTerm: (term) => {
     set({ searchTerm: term });
   },
@@ -249,6 +280,16 @@ export const useLogStore = create<LogState>((set, get) => ({
       isFiltering: true,
       selectedLogIndex: null
     }));
+    get().computeFilteredLogs();
+  },
+
+  toggleLevel: (level) => {
+    set((state) => {
+      const active = state.activeLevels.includes(level)
+        ? state.activeLevels.filter((l) => l !== level)
+        : [...state.activeLevels, level];
+      return { activeLevels: active, isFiltering: true, selectedLogIndex: null };
+    });
     get().computeFilteredLogs();
   },
 
@@ -371,7 +412,7 @@ export const useLogStore = create<LogState>((set, get) => ({
 
   // Compute filtered logs - called when filters/search/sort changes
   computeFilteredLogs: () => {
-    const { logs, appliedFilters, orderByField, orderByDirection, appliedSearchTerm, appliedQuery } = get();
+    const { logs, appliedFilters, orderByField, orderByDirection, appliedSearchTerm, appliedQuery, activeLevels } = get();
 
     // Use requestAnimationFrame for smoother UI
     requestAnimationFrame(() => {
@@ -394,6 +435,21 @@ export const useLogStore = create<LogState>((set, get) => ({
           const stringified = getStringified(log);
           return stringified.includes(searchLower);
         });
+      }
+
+      // Apply level chips (search mode): keep rows whose normalized level is active
+      if (activeLevels.length > 0) {
+        const sample = result.find((l) => l && typeof l === 'object') as LogEntry | undefined;
+        const levelField = sample ? autoDetectLevelField(sample) : null;
+        if (levelField) {
+          const wanted = new Set(activeLevels);
+          result = result.filter((log) => {
+            if (typeof log !== 'object' || !log) {
+              return false;
+            }
+            return wanted.has(getLogLevel(log, levelField));
+          });
+        }
       }
 
       // Apply filters
