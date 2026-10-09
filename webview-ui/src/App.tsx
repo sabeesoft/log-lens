@@ -1,14 +1,9 @@
 import { useEffect } from "react";
 import LogViewer from "./LogViewer";
 import { useLogStore } from "./store/logStore";
+import { getVsCodeApi } from "./utils/vscodeApi";
 
-declare global {
-  interface Window {
-    acquireVsCodeApi?: () => any;
-  }
-}
-
-const vscode = window.acquireVsCodeApi?.();
+const vscode = getVsCodeApi();
 
 export default function App() {
   const setLogs = useLogStore((state) => state.setLogs);

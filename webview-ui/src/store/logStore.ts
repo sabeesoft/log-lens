@@ -66,6 +66,7 @@ interface LogState {
 
   // UI actions
   selectLog: (index: number | null) => void;
+  stepSelection: (delta: number) => void;
   setVisibleFields: (fields: string[]) => void;
   toggleFieldVisibility: (field: string) => void;
   toggleSettingsPanel: () => void;
@@ -246,6 +247,16 @@ export const useLogStore = create<LogState>((set, get) => ({
 
   // UI actions
   selectLog: (index) => set({ selectedLogIndex: index }),
+
+  stepSelection: (delta) =>
+    set((state) => {
+      if (state.selectedLogIndex === null || state.filteredLogs.length === 0) {
+        return {};
+      }
+      const max = state.filteredLogs.length - 1;
+      const next = Math.min(max, Math.max(0, state.selectedLogIndex + delta));
+      return { selectedLogIndex: next };
+    }),
 
   setVisibleFields: (fields) => set({ visibleFields: fields }),
 
