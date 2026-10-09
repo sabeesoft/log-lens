@@ -30,14 +30,14 @@ export default function FilterRow({
         alignItems: 'center',
         gap: '4px',
         padding: '4px',
-        backgroundColor: '#1a1a1a',
+        backgroundColor: 'var(--vscode-editorWidget-background, #1a1a1a)',
         borderRadius: '4px',
-        border: '1px solid #222',
+        border: '1px solid var(--vscode-editorWidget-background, #222)',
         flexWrap: 'wrap'
       }}
     >
       {showRelation && (
-        <div style={{ display: 'flex', backgroundColor: '#222', borderRadius: '3px', padding: '1px', minWidth: '60px' }}>
+        <div style={{ display: 'flex', backgroundColor: 'var(--vscode-editorWidget-background, #222)', borderRadius: '3px', padding: '1px', minWidth: '60px' }}>
           <button
             onClick={() => onUpdate({ ...filter, relation: 'AND' })}
             style={{
@@ -47,8 +47,8 @@ export default function FilterRow({
               fontWeight: 700,
               border: 'none',
               cursor: 'pointer',
-              backgroundColor: filter.relation === 'AND' ? '#3b82f6' : 'transparent',
-              color: filter.relation === 'AND' ? '#fff' : '#71717a',
+              backgroundColor: filter.relation === 'AND' ? 'var(--vscode-charts-blue, #3b82f6)' : 'transparent',
+              color: filter.relation === 'AND' ? 'var(--vscode-foreground, #fff)' : 'var(--vscode-descriptionForeground, #71717a)',
               fontFamily: 'monospace'
             }}
           >
@@ -63,8 +63,8 @@ export default function FilterRow({
               fontWeight: 700,
               border: 'none',
               cursor: 'pointer',
-              backgroundColor: filter.relation === 'OR' ? '#8b5cf6' : 'transparent',
-              color: filter.relation === 'OR' ? '#fff' : '#71717a',
+              backgroundColor: filter.relation === 'OR' ? 'var(--vscode-charts-purple, #8b5cf6)' : 'transparent',
+              color: filter.relation === 'OR' ? 'var(--vscode-foreground, #fff)' : 'var(--vscode-descriptionForeground, #71717a)',
               fontFamily: 'monospace'
             }}
           >
@@ -88,11 +88,11 @@ export default function FilterRow({
           minWidth: '70px',
           flex: '0 1 90px',
           padding: '4px 8px',
-          backgroundColor: '#1a1a1a',
-          border: '1px solid #333',
+          backgroundColor: 'var(--vscode-editorWidget-background, #1a1a1a)',
+          border: '1px solid var(--vscode-panel-border, #333)',
           borderRadius: '3px',
           fontSize: '11px',
-          color: '#d4d4d8',
+          color: 'var(--vscode-foreground, #d4d4d8)',
           fontFamily: 'monospace'
         }}
       >
@@ -111,11 +111,11 @@ export default function FilterRow({
           flex: '1 1 150px',
           minWidth: '100px',
           padding: '4px 8px',
-          backgroundColor: '#1a1a1a',
-          border: '1px solid #333',
+          backgroundColor: 'var(--vscode-editorWidget-background, #1a1a1a)',
+          border: '1px solid var(--vscode-panel-border, #333)',
           borderRadius: '3px',
           fontSize: '11px',
-          color: '#d4d4d8',
+          color: 'var(--vscode-foreground, #d4d4d8)',
           fontFamily: 'monospace'
         }}
       />
@@ -125,7 +125,7 @@ export default function FilterRow({
           onClick={onRemove}
           style={{
             padding: '4px',
-            color: '#ef4444',
+            color: 'var(--vscode-charts-red, #ef4444)',
             backgroundColor: 'transparent',
             border: 'none',
             cursor: 'pointer',

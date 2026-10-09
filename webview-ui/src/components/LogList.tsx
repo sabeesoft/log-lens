@@ -97,11 +97,11 @@ export default function LogList({
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#0a0a0a'
+          backgroundColor: 'var(--vscode-editor-background, #0a0a0a)'
         }}
       >
-        <Search size={32} color="#333" style={{ marginBottom: '12px' }} />
-        <p style={{ color: '#71717a', fontSize: '13px', margin: 0, fontFamily: 'monospace' }}>
+        <Search size={32} color="var(--vscode-panel-border, #333)" style={{ marginBottom: '12px' }} />
+        <p style={{ color: 'var(--vscode-descriptionForeground, #71717a)', fontSize: '13px', margin: 0, fontFamily: 'monospace' }}>
           No logs found
         </p>
       </div>

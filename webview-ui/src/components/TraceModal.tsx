@@ -18,7 +18,7 @@ import { X, AlertCircle, AlertTriangle, Activity, Clock, Copy, Check, RotateCcw 
 import LogRow from './LogRow';
 import { LogEntry } from '../types';
 import { buildServiceGraph, detectTraceConfig, ServiceNode as ServiceNodeData, getServiceValue } from '../utils/traceUtils';
-import { getLevelBorderColor } from '../utils/logUtils';
+import { getLevelBorderColor, resolveCssVar } from '../utils/logUtils';
 
 interface TraceModalProps {
   traceId: string;
@@ -37,15 +37,15 @@ function ServiceNodeComponent({ data }: { data: CustomNodeData }) {
   const nodeData = data;
 
   const getBorderColor = () => {
-    if (nodeData.hasErrors) return '#ef4444';
-    if (nodeData.hasWarnings) return '#f59e0b';
-    return '#3b82f6';
+    if (nodeData.hasErrors) return 'var(--vscode-charts-red, #ef4444)';
+    if (nodeData.hasWarnings) return 'var(--vscode-charts-yellow, #f59e0b)';
+    return 'var(--vscode-charts-blue, #3b82f6)';
   };
 
   const getStatusIcon = () => {
-    if (nodeData.hasErrors) return <AlertCircle size={14} color="#ef4444" />;
-    if (nodeData.hasWarnings) return <AlertTriangle size={14} color="#f59e0b" />;
-    return <Activity size={14} color="#22c55e" />;
+    if (nodeData.hasErrors) return <AlertCircle size={14} color="var(--vscode-charts-red, #ef4444)" />;
+    if (nodeData.hasWarnings) return <AlertTriangle size={14} color="var(--vscode-charts-yellow, #f59e0b)" />;
+    return <Activity size={14} color="var(--vscode-charts-green, #22c55e)" />;
   };
 
   return (
@@ -54,8 +54,8 @@ function ServiceNodeComponent({ data }: { data: CustomNodeData }) {
       style={{
         padding: '12px 16px',
         borderRadius: '8px',
-        backgroundColor: nodeData.isSelected ? '#1a1a1a' : '#111',
-        border: `2px solid ${nodeData.isSelected ? '#60a5fa' : getBorderColor()}`,
+        backgroundColor: nodeData.isSelected ? 'var(--vscode-editorWidget-background, #1a1a1a)' : 'var(--vscode-sideBar-background, #111)',
+        border: `2px solid ${nodeData.isSelected ? 'var(--vscode-textLink-foreground, #60a5fa)' : getBorderColor()}`,
         boxShadow: nodeData.isSelected
           ? '0 0 0 2px rgba(96, 165, 250, 0.3), 0 4px 12px rgba(0, 0, 0, 0.4)'
           : '0 2px 8px rgba(0, 0, 0, 0.3)',
@@ -64,14 +64,14 @@ function ServiceNodeComponent({ data }: { data: CustomNodeData }) {
         transition: 'all 0.2s'
       }}
     >
-      <Handle type="target" position={Position.Left} style={{ background: '#333', border: 'none' }} />
+      <Handle type="target" position={Position.Left} style={{ background: 'var(--vscode-panel-border, #333)', border: 'none' }} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
         {getStatusIcon()}
         <span style={{
           fontSize: '13px',
           fontWeight: 600,
-          color: '#f3f4f6',
+          color: 'var(--vscode-foreground, #f3f4f6)',
           fontFamily: 'monospace'
         }}>
           {nodeData.label}
@@ -80,7 +80,7 @@ function ServiceNodeComponent({ data }: { data: CustomNodeData }) {
 
       <div style={{
         fontSize: '11px',
-        color: '#71717a',
+        color: 'var(--vscode-descriptionForeground, #71717a)',
         fontFamily: 'monospace',
         display: 'flex',
         alignItems: 'center',
@@ -90,7 +90,7 @@ function ServiceNodeComponent({ data }: { data: CustomNodeData }) {
         {nodeData.logCount} log{nodeData.logCount !== 1 ? 's' : ''}
       </div>
 
-      <Handle type="source" position={Position.Right} style={{ background: '#333', border: 'none' }} />
+      <Handle type="source" position={Position.Right} style={{ background: 'var(--vscode-panel-border, #333)', border: 'none' }} />
     </div>
   );
 }
@@ -116,15 +116,15 @@ function ResetViewButton({ onReset }: { onReset: () => void }) {
         position: 'absolute',
         top: '20px',
         left: '20px',
-        backgroundColor: '#111',
-        border: '1px solid #222',
+        backgroundColor: 'var(--vscode-sideBar-background, #111)',
+        border: '1px solid var(--vscode-editorWidget-background, #222)',
         borderRadius: '8px',
         padding: '8px 12px',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
         gap: '6px',
-        color: '#71717a',
+        color: 'var(--vscode-descriptionForeground, #71717a)',
         fontSize: '11px',
         fontFamily: 'monospace',
         fontWeight: 600,
@@ -132,12 +132,12 @@ function ResetViewButton({ onReset }: { onReset: () => void }) {
         transition: 'all 0.2s'
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = '#1a1a1a';
-        e.currentTarget.style.color = '#a1a1aa';
+        e.currentTarget.style.backgroundColor = 'var(--vscode-editorWidget-background, #1a1a1a)';
+        e.currentTarget.style.color = 'var(--vscode-descriptionForeground, #a1a1aa)';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = '#111';
-        e.currentTarget.style.color = '#71717a';
+        e.currentTarget.style.backgroundColor = 'var(--vscode-sideBar-background, #111)';
+        e.currentTarget.style.color = 'var(--vscode-descriptionForeground, #71717a)';
       }}
       title="Reset view"
     >
@@ -193,17 +193,17 @@ const TreeNode = ({ value, nodeKey, depth }: { value: any; nodeKey: string | nul
   if (value === null || value === undefined) {
     return (
       <div style={{ marginLeft: `${indent}px`, fontFamily: 'monospace', fontSize: '11px' }}>
-        {nodeKey && <span style={{ color: '#60a5fa' }}>{nodeKey}: </span>}
-        <span style={{ color: '#71717a' }}>{String(value)}</span>
+        {nodeKey && <span style={{ color: 'var(--vscode-textLink-foreground, #60a5fa)' }}>{nodeKey}: </span>}
+        <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>{String(value)}</span>
       </div>
     );
   }
 
   if (typeof value !== 'object') {
-    const color = typeof value === 'string' ? '#34d399' : typeof value === 'boolean' ? '#f59e0b' : '#a78bfa';
+    const color = typeof value === 'string' ? 'var(--vscode-charts-green, #34d399)' : typeof value === 'boolean' ? 'var(--vscode-charts-yellow, #f59e0b)' : 'var(--vscode-charts-purple, #a78bfa)';
     return (
       <div style={{ marginLeft: `${indent}px`, fontFamily: 'monospace', fontSize: '11px' }}>
-        {nodeKey && <span style={{ color: '#60a5fa' }}>{nodeKey}: </span>}
+        {nodeKey && <span style={{ color: 'var(--vscode-textLink-foreground, #60a5fa)' }}>{nodeKey}: </span>}
         <span style={{ color }}>{typeof value === 'string' ? `"${value}"` : String(value)}</span>
       </div>
     );
@@ -217,20 +217,20 @@ const TreeNode = ({ value, nodeKey, depth }: { value: any; nodeKey: string | nul
     <div style={{ marginLeft: `${indent}px`, fontFamily: 'monospace', fontSize: '11px' }}>
       <div
         onClick={() => setExpanded(!expanded)}
-        style={{ cursor: 'pointer', color: '#d4d4d8', userSelect: 'none' }}
+        style={{ cursor: 'pointer', color: 'var(--vscode-foreground, #d4d4d8)', userSelect: 'none' }}
       >
-        <span style={{ color: '#71717a', marginRight: '4px' }}>{expanded ? '▼' : '▶'}</span>
-        {nodeKey && <span style={{ color: '#60a5fa' }}>{nodeKey}: </span>}
-        <span style={{ color: '#71717a' }}>{bracket[0]}</span>
-        {!expanded && <span style={{ color: '#71717a' }}>...</span>}
-        {!expanded && <span style={{ color: '#71717a' }}>{bracket[1]}</span>}
+        <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)', marginRight: '4px' }}>{expanded ? '▼' : '▶'}</span>
+        {nodeKey && <span style={{ color: 'var(--vscode-textLink-foreground, #60a5fa)' }}>{nodeKey}: </span>}
+        <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>{bracket[0]}</span>
+        {!expanded && <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>...</span>}
+        {!expanded && <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>{bracket[1]}</span>}
       </div>
       {expanded && (
         <>
           {entries.map(([k, v]) => (
             <TreeNode key={`${nodeKey || 'root'}-${k}`} value={v} nodeKey={k} depth={depth + 1} />
           ))}
-          <div style={{ marginLeft: `${indent}px`, color: '#71717a' }}>{bracket[1]}</div>
+          <div style={{ marginLeft: `${indent}px`, color: 'var(--vscode-descriptionForeground, #71717a)' }}>{bracket[1]}</div>
         </>
       )}
     </div>
@@ -273,14 +273,16 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
       source: edge.source,
       target: edge.target,
       animated: true,
-      style: { stroke: '#333', strokeWidth: 2 },
+      style: { stroke: 'var(--vscode-panel-border, #333)', strokeWidth: 2 },
       markerEnd: {
         type: MarkerType.ArrowClosed,
-        color: '#333'
+        // React Flow renders the arrow marker as an SVG fill attribute, where CSS
+        // var() does not resolve — so feed it the computed theme color directly.
+        color: resolveCssVar('--vscode-panel-border', '#333')
       },
       label: edge.requestCount > 1 ? `${edge.requestCount}` : undefined,
-      labelStyle: { fill: '#71717a', fontSize: 10, fontFamily: 'monospace' },
-      labelBgStyle: { fill: '#111', fillOpacity: 0.9 }
+      labelStyle: { fill: 'var(--vscode-descriptionForeground, #71717a)', fontSize: 10, fontFamily: 'monospace' },
+      labelBgStyle: { fill: 'var(--vscode-sideBar-background, #111)', fillOpacity: 0.9 }
     })),
     [graph.edges]
   );
@@ -392,9 +394,9 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
     const elements: React.ReactNode[] = [];
 
     if (typeof obj !== 'object' || obj === null) {
-      const color = obj === null ? '#71717a' :
-                    typeof obj === 'string' ? '#34d399' :
-                    typeof obj === 'boolean' ? '#f59e0b' : '#a78bfa';
+      const color = obj === null ? 'var(--vscode-descriptionForeground, #71717a)' :
+                    typeof obj === 'string' ? 'var(--vscode-charts-green, #34d399)' :
+                    typeof obj === 'boolean' ? 'var(--vscode-charts-yellow, #f59e0b)' : 'var(--vscode-charts-purple, #a78bfa)';
       const display = typeof obj === 'string' ? `"${obj}"` : String(obj);
       return [<span key="value" style={{ color }}>{display}</span>];
     }
@@ -405,7 +407,7 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
     const closeBracket = isArray ? ']' : '}';
     const spaces = '  '.repeat(indent);
 
-    elements.push(<span key="open" style={{ color: '#71717a' }}>{openBracket}</span>);
+    elements.push(<span key="open" style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>{openBracket}</span>);
 
     if (entries.length > 0) {
       elements.push(<br key="open-br" />);
@@ -416,12 +418,12 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
             {childSpaces}
             {!isArray && (
               <>
-                <span style={{ color: '#60a5fa' }}>"{key}"</span>
-                <span style={{ color: '#d4d4d8' }}>: </span>
+                <span style={{ color: 'var(--vscode-textLink-foreground, #60a5fa)' }}>"{key}"</span>
+                <span style={{ color: 'var(--vscode-foreground, #d4d4d8)' }}>: </span>
               </>
             )}
             {renderPrettyJson(value, indent + 1)}
-            {idx < entries.length - 1 && <span style={{ color: '#d4d4d8' }}>,</span>}
+            {idx < entries.length - 1 && <span style={{ color: 'var(--vscode-foreground, #d4d4d8)' }}>,</span>}
             <br />
           </span>
         );
@@ -429,7 +431,7 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
       elements.push(<span key="close-spaces">{spaces}</span>);
     }
 
-    elements.push(<span key="close" style={{ color: '#71717a' }}>{closeBracket}</span>);
+    elements.push(<span key="close" style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>{closeBracket}</span>);
     return elements;
   };
 
@@ -441,7 +443,7 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: '#0a0a0a',
+        backgroundColor: 'var(--vscode-editor-background, #0a0a0a)',
         zIndex: 2000,
         display: 'flex',
         flexDirection: 'column'
@@ -451,28 +453,28 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
       <div
         style={{
           padding: '12px 20px',
-          borderBottom: '1px solid #222',
+          borderBottom: '1px solid var(--vscode-editorWidget-background, #222)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          backgroundColor: '#0a0a0a'
+          backgroundColor: 'var(--vscode-editor-background, #0a0a0a)'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '14px', fontWeight: 600, color: '#a1a1aa', fontFamily: 'monospace' }}>
+          <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--vscode-descriptionForeground, #a1a1aa)', fontFamily: 'monospace' }}>
             TRACE VIEW
           </span>
           <div style={{
             padding: '4px 12px',
-            backgroundColor: '#111',
+            backgroundColor: 'var(--vscode-sideBar-background, #111)',
             borderRadius: '4px',
             fontSize: '12px',
-            color: '#60a5fa',
+            color: 'var(--vscode-textLink-foreground, #60a5fa)',
             fontFamily: 'monospace'
           }}>
             {traceId}
           </div>
-          <span style={{ fontSize: '12px', color: '#71717a', fontFamily: 'monospace' }}>
+          <span style={{ fontSize: '12px', color: 'var(--vscode-descriptionForeground, #71717a)', fontFamily: 'monospace' }}>
             {traceLogs.length} logs · {graph.nodes.length} services
           </span>
         </div>
@@ -483,7 +485,7 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
             border: 'none',
             cursor: 'pointer',
             padding: '8px',
-            color: '#71717a',
+            color: 'var(--vscode-descriptionForeground, #71717a)',
             display: 'flex',
             alignItems: 'center',
             borderRadius: '4px'
@@ -498,7 +500,7 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
         {/* Left side: Graph + Logs */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {/* Service Graph - Top */}
-          <div style={{ height: `${splitPosition}%`, position: 'relative', backgroundColor: '#0a0a0a' }}>
+          <div style={{ height: `${splitPosition}%`, position: 'relative', backgroundColor: 'var(--vscode-editor-background, #0a0a0a)' }}>
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -509,12 +511,12 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
               fitViewOptions={{ padding: 0.3 }}
               proOptions={{ hideAttribution: true }}
             >
-              <Background color="#1a1a1a" gap={20} />
+              <Background color={resolveCssVar('--vscode-editorWidget-background', '#1a1a1a')} gap={20} />
               <Controls
                 style={{
-                  backgroundColor: '#111',
+                  backgroundColor: 'var(--vscode-sideBar-background, #111)',
                   borderRadius: '8px',
-                  border: '1px solid #222'
+                  border: '1px solid var(--vscode-editorWidget-background, #222)'
                 }}
               />
               <ResetViewButton onReset={handleResetGraph} />
@@ -526,27 +528,27 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
                 position: 'absolute',
                 bottom: '20px',
                 left: '20px',
-                backgroundColor: '#111',
-                border: '1px solid #222',
+                backgroundColor: 'var(--vscode-sideBar-background, #111)',
+                border: '1px solid var(--vscode-editorWidget-background, #222)',
                 borderRadius: '8px',
                 padding: '12px 16px',
                 fontSize: '11px',
                 fontFamily: 'monospace'
               }}
             >
-              <div style={{ color: '#71717a', marginBottom: '8px', fontWeight: 600 }}>STATUS</div>
+              <div style={{ color: 'var(--vscode-descriptionForeground, #71717a)', marginBottom: '8px', fontWeight: 600 }}>STATUS</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: '#22c55e' }} />
-                  <span style={{ color: '#71717a' }}>Healthy</span>
+                  <div style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: 'var(--vscode-charts-green, #22c55e)' }} />
+                  <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>Healthy</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: '#f59e0b' }} />
-                  <span style={{ color: '#71717a' }}>Warnings</span>
+                  <div style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: 'var(--vscode-charts-yellow, #f59e0b)' }} />
+                  <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>Warnings</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: '#ef4444' }} />
-                  <span style={{ color: '#71717a' }}>Errors</span>
+                  <div style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: 'var(--vscode-charts-red, #ef4444)' }} />
+                  <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>Errors</span>
                 </div>
               </div>
             </div>
@@ -557,16 +559,16 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
             onMouseDown={handleResizeStart}
             style={{
               height: '6px',
-              backgroundColor: isResizing ? '#3b82f6' : '#222',
+              backgroundColor: isResizing ? 'var(--vscode-charts-blue, #3b82f6)' : 'var(--vscode-editorWidget-background, #222)',
               cursor: 'ns-resize',
               transition: 'background-color 0.15s',
               flexShrink: 0
             }}
             onMouseEnter={(e) => {
-              if (!isResizing) e.currentTarget.style.backgroundColor = '#333';
+              if (!isResizing) e.currentTarget.style.backgroundColor = 'var(--vscode-panel-border, #333)';
             }}
             onMouseLeave={(e) => {
-              if (!isResizing) e.currentTarget.style.backgroundColor = '#222';
+              if (!isResizing) e.currentTarget.style.backgroundColor = 'var(--vscode-editorWidget-background, #222)';
             }}
           />
 
@@ -576,25 +578,25 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
               height: `${100 - splitPosition}%`,
               display: 'flex',
               flexDirection: 'column',
-              backgroundColor: '#0a0a0a',
+              backgroundColor: 'var(--vscode-editor-background, #0a0a0a)',
               overflow: 'hidden'
             }}
           >
             <div
               style={{
                 padding: '10px 16px',
-                borderBottom: '1px solid #222',
-                backgroundColor: '#0a0a0a',
+                borderBottom: '1px solid var(--vscode-editorWidget-background, #222)',
+                backgroundColor: 'var(--vscode-editor-background, #0a0a0a)',
                 flexShrink: 0,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between'
               }}
             >
-              <div style={{ fontSize: '12px', fontWeight: 600, color: '#a1a1aa', fontFamily: 'monospace' }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--vscode-descriptionForeground, #a1a1aa)', fontFamily: 'monospace' }}>
                 {selectedService ? (
                   <>
-                    <span style={{ color: '#60a5fa' }}>{selectedService}</span>
+                    <span style={{ color: 'var(--vscode-textLink-foreground, #60a5fa)' }}>{selectedService}</span>
                     <span> · {filteredLogs.length} logs</span>
                   </>
                 ) : (
@@ -616,11 +618,11 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
                   }}
                   style={{
                     background: 'none',
-                    border: '1px solid #333',
+                    border: '1px solid var(--vscode-panel-border, #333)',
                     borderRadius: '4px',
                     cursor: 'pointer',
                     padding: '4px 8px',
-                    color: '#71717a',
+                    color: 'var(--vscode-descriptionForeground, #71717a)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
@@ -629,12 +631,12 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
                     transition: 'all 0.2s'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#ef4444';
-                    e.currentTarget.style.color = '#ef4444';
+                    e.currentTarget.style.borderColor = 'var(--vscode-charts-red, #ef4444)';
+                    e.currentTarget.style.color = 'var(--vscode-charts-red, #ef4444)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#333';
-                    e.currentTarget.style.color = '#71717a';
+                    e.currentTarget.style.borderColor = 'var(--vscode-panel-border, #333)';
+                    e.currentTarget.style.color = 'var(--vscode-descriptionForeground, #71717a)';
                   }}
                   title="Clear filter"
                 >
@@ -671,7 +673,7 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
               bottom: 0,
               width: `${sidebarWidth}px`,
               display: 'flex',
-              backgroundColor: '#0a0a0a',
+              backgroundColor: 'var(--vscode-editor-background, #0a0a0a)',
               zIndex: 100,
               boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.5)'
             }}
@@ -681,16 +683,16 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
               onMouseDown={handleSidebarResizeStart}
               style={{
                 width: '6px',
-                backgroundColor: isResizingSidebar ? '#3b82f6' : '#222',
+                backgroundColor: isResizingSidebar ? 'var(--vscode-charts-blue, #3b82f6)' : 'var(--vscode-editorWidget-background, #222)',
                 cursor: 'ew-resize',
                 transition: 'background-color 0.15s',
                 flexShrink: 0
               }}
               onMouseEnter={(e) => {
-                if (!isResizingSidebar) e.currentTarget.style.backgroundColor = '#333';
+                if (!isResizingSidebar) e.currentTarget.style.backgroundColor = 'var(--vscode-panel-border, #333)';
               }}
               onMouseLeave={(e) => {
-                if (!isResizingSidebar) e.currentTarget.style.backgroundColor = '#222';
+                if (!isResizingSidebar) e.currentTarget.style.backgroundColor = 'var(--vscode-editorWidget-background, #222)';
               }}
             />
             <div
@@ -705,13 +707,13 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
             <div
               style={{
                 padding: '12px',
-                borderBottom: '1px solid #222',
+                borderBottom: '1px solid var(--vscode-editorWidget-background, #222)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between'
               }}
             >
-              <span style={{ fontSize: '12px', fontWeight: 600, color: '#a1a1aa', fontFamily: 'monospace' }}>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--vscode-descriptionForeground, #a1a1aa)', fontFamily: 'monospace' }}>
                 LOG DETAILS
               </span>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -722,7 +724,7 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
                     border: 'none',
                     cursor: 'pointer',
                     padding: '4px 8px',
-                    color: copied ? '#10b981' : '#71717a',
+                    color: copied ? 'var(--vscode-charts-green, #10b981)' : 'var(--vscode-descriptionForeground, #71717a)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
@@ -741,7 +743,7 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
                     border: 'none',
                     cursor: 'pointer',
                     padding: '4px',
-                    color: '#71717a',
+                    color: 'var(--vscode-descriptionForeground, #71717a)',
                     display: 'flex',
                     alignItems: 'center'
                   }}
@@ -756,7 +758,7 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
               style={{
                 display: 'flex',
                 gap: '0',
-                borderBottom: '1px solid #222',
+                borderBottom: '1px solid var(--vscode-editorWidget-background, #222)',
                 padding: '0 12px'
               }}
             >
@@ -767,10 +769,10 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
                   style={{
                     background: 'none',
                     border: 'none',
-                    borderBottom: sidebarTab === tab ? '2px solid #60a5fa' : '2px solid transparent',
+                    borderBottom: sidebarTab === tab ? '2px solid var(--vscode-textLink-foreground, #60a5fa)' : '2px solid transparent',
                     cursor: 'pointer',
                     padding: '8px 12px',
-                    color: sidebarTab === tab ? '#60a5fa' : '#71717a',
+                    color: sidebarTab === tab ? 'var(--vscode-textLink-foreground, #60a5fa)' : 'var(--vscode-descriptionForeground, #71717a)',
                     fontSize: '11px',
                     fontWeight: 600,
                     fontFamily: 'monospace',
@@ -789,7 +791,7 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
                 <pre
                   style={{
                     fontSize: '11px',
-                    color: '#d4d4d8',
+                    color: 'var(--vscode-foreground, #d4d4d8)',
                     fontFamily: 'Monaco, Consolas, "Courier New", monospace',
                     margin: 0,
                     lineHeight: '1.6',
@@ -810,11 +812,11 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
                     lineHeight: '1.6',
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-word',
-                    color: '#d4d4d8'
+                    color: 'var(--vscode-foreground, #d4d4d8)'
                   }}
                 >
                   {typeof selectedLog === 'string' ? (
-                    <span style={{ color: '#34d399' }}>"{selectedLog}"</span>
+                    <span style={{ color: 'var(--vscode-charts-green, #34d399)' }}>"{selectedLog}"</span>
                   ) : (
                     renderPrettyJson(selectedLog)
                   )}
@@ -824,7 +826,7 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
               {sidebarTab === 'tree' && (
                 <div style={{ lineHeight: '1.6' }}>
                   {typeof selectedLog === 'string' ? (
-                    <div style={{ fontFamily: 'monospace', fontSize: '11px', color: '#34d399' }}>"{selectedLog}"</div>
+                    <div style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--vscode-charts-green, #34d399)' }}>"{selectedLog}"</div>
                   ) : (
                     <TreeNode value={selectedLog} nodeKey={null} depth={0} />
                   )}

@@ -64,8 +64,8 @@ export default function LogViewer() {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: '#0a0a0a',
-        color: '#f3f4f6',
+        backgroundColor: 'var(--vscode-editor-background, #0a0a0a)',
+        color: 'var(--vscode-foreground, #f3f4f6)',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden'
