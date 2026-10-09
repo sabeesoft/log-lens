@@ -7,6 +7,10 @@ A lightweight VS Code extension for reading and querying log files. Open any
 without leaving the editor. Log Lens follows your VS Code color theme (dark,
 light and high contrast).
 
+## Demo
+
+![Log Lens in action](assets/demo.gif)
+
 ## Opening logs
 
 Log Lens never needs an active editor:
