@@ -63,8 +63,8 @@ export default function QueryBar() {
     <div
       style={{
         padding: '8px 12px',
-        backgroundColor: '#0d0d0d',
-        borderBottom: '1px solid #222',
+        backgroundColor: 'var(--vscode-editor-background, #0d0d0d)',
+        borderBottom: '1px solid var(--vscode-editorWidget-background, #222)',
         flexShrink: 0,
       }}
     >
@@ -78,23 +78,23 @@ export default function QueryBar() {
             marginBottom: '8px',
             fontSize: '11px',
             fontFamily: 'monospace',
-            color: '#52525b',
+            color: 'var(--vscode-disabledForeground, #52525b)',
             flexWrap: 'wrap',
           }}
         >
-          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#a1a1aa' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--vscode-descriptionForeground, #a1a1aa)' }}>
             <FileText size={12} />
             <span title={fileName} style={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {fileName || 'logs'}
             </span>
-            <span style={{ color: '#52525b' }}>
+            <span style={{ color: 'var(--vscode-disabledForeground, #52525b)' }}>
               · {totalCount.toLocaleString()} entries{format ? ` · ${format}` : ''}
             </span>
           </span>
 
           {(detected.timestamp || detected.level || detected.service) && (
             <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ color: '#3f3f46', fontWeight: 600, letterSpacing: '0.5px' }}>DETECTED</span>
+              <span style={{ color: 'var(--vscode-panel-border, #3f3f46)', fontWeight: 600, letterSpacing: '0.5px' }}>DETECTED</span>
               {detected.timestamp && <Mapping label="ts" value={detected.timestamp} />}
               {detected.level && <Mapping label="level" value={detected.level} />}
               {detected.service && <Mapping label="service" value={detected.service} />}
@@ -111,7 +111,7 @@ export default function QueryBar() {
               </>
             ) : (
               <>
-                <span style={{ color: '#a1a1aa', fontWeight: 600 }}>{filteredCount.toLocaleString()}</span>
+                <span style={{ color: 'var(--vscode-descriptionForeground, #a1a1aa)', fontWeight: 600 }}>{filteredCount.toLocaleString()}</span>
                 <span>/ {totalCount.toLocaleString()}</span>
               </>
             )}
@@ -127,9 +127,9 @@ export default function QueryBar() {
                 gap: '5px',
                 padding: '3px 8px',
                 backgroundColor: 'transparent',
-                color: '#a1a1aa',
+                color: 'var(--vscode-descriptionForeground, #a1a1aa)',
                 borderRadius: '5px',
-                border: '1px solid #333',
+                border: '1px solid var(--vscode-panel-border, #333)',
                 cursor: 'pointer',
                 fontSize: '11px',
                 fontFamily: 'monospace',
@@ -164,10 +164,10 @@ export default function QueryBar() {
             gap: '6px',
             padding: '0 13px',
             height: '34px',
-            backgroundColor: '#3b82f6',
-            color: '#fff',
+            backgroundColor: 'var(--vscode-charts-blue, #3b82f6)',
+            color: 'var(--vscode-foreground, #fff)',
             borderRadius: '6px',
-            border: '1px solid #3b82f6',
+            border: '1px solid var(--vscode-charts-blue, #3b82f6)',
             cursor: 'pointer',
             fontSize: '12px',
             fontWeight: 600,
@@ -189,11 +189,11 @@ export default function QueryBar() {
             gap: '6px',
             padding: '0 13px',
             height: '34px',
-            backgroundColor: settingsOpen ? '#3b82f6' : '#222',
-            color: settingsOpen ? '#fff' : '#a1a1aa',
+            backgroundColor: settingsOpen ? 'var(--vscode-charts-blue, #3b82f6)' : 'var(--vscode-editorWidget-background, #222)',
+            color: settingsOpen ? 'var(--vscode-foreground, #fff)' : 'var(--vscode-descriptionForeground, #a1a1aa)',
             borderRadius: '6px',
             border: '1px solid',
-            borderColor: settingsOpen ? '#3b82f6' : '#333',
+            borderColor: settingsOpen ? 'var(--vscode-charts-blue, #3b82f6)' : 'var(--vscode-panel-border, #333)',
             cursor: 'pointer',
             fontSize: '12px',
             fontWeight: 500,
@@ -229,13 +229,13 @@ export default function QueryBar() {
                 alignItems: 'center',
                 gap: '6px',
                 fontSize: '11.5px',
-                color: '#fca5a5',
+                color: 'var(--vscode-charts-red, #fca5a5)',
                 fontFamily: 'monospace',
               }}
             >
               <AlertCircle size={12} style={{ flexShrink: 0 }} />
               <span>{err.message}</span>
-              <span style={{ color: '#7f1d1d' }}>(pos {err.start})</span>
+              <span style={{ color: 'var(--vscode-inputValidation-errorBackground, #7f1d1d)' }}>(pos {err.start})</span>
             </div>
           ))}
         </div>
@@ -247,9 +247,9 @@ export default function QueryBar() {
 function Mapping({ label, value }: { label: string; value: string }) {
   return (
     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-      <span style={{ color: '#52525b' }}>{label}</span>
-      <span style={{ color: '#3f3f46' }}>←</span>
-      <span style={{ color: '#9cdcfe' }}>{value}</span>
+      <span style={{ color: 'var(--vscode-disabledForeground, #52525b)' }}>{label}</span>
+      <span style={{ color: 'var(--vscode-panel-border, #3f3f46)' }}>←</span>
+      <span style={{ color: 'var(--vscode-debugTokenExpression-name, #9cdcfe)' }}>{value}</span>
     </span>
   );
 }

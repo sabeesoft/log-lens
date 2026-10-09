@@ -58,11 +58,11 @@ export default function SearchableSelect({
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '4px 8px',
-          backgroundColor: '#1a1a1a',
-          border: '1px solid #333',
+          backgroundColor: 'var(--vscode-editorWidget-background, #1a1a1a)',
+          border: '1px solid var(--vscode-panel-border, #333)',
           borderRadius: '3px',
           fontSize: '11px',
-          color: value ? '#d4d4d8' : '#71717a',
+          color: value ? 'var(--vscode-foreground, #d4d4d8)' : 'var(--vscode-descriptionForeground, #71717a)',
           fontFamily: 'monospace',
           cursor: 'pointer',
           minHeight: '26px'
@@ -71,7 +71,7 @@ export default function SearchableSelect({
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {value || placeholder}
         </span>
-        <ChevronDown size={12} style={{ flexShrink: 0, marginLeft: '4px', color: '#71717a' }} />
+        <ChevronDown size={12} style={{ flexShrink: 0, marginLeft: '4px', color: 'var(--vscode-descriptionForeground, #71717a)' }} />
       </div>
 
       {isOpen && (
@@ -82,8 +82,8 @@ export default function SearchableSelect({
             left: 0,
             right: 0,
             marginTop: '2px',
-            backgroundColor: '#1a1a1a',
-            border: '1px solid #333',
+            backgroundColor: 'var(--vscode-editorWidget-background, #1a1a1a)',
+            border: '1px solid var(--vscode-panel-border, #333)',
             borderRadius: '4px',
             zIndex: 9999,
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
@@ -92,7 +92,7 @@ export default function SearchableSelect({
             flexDirection: 'column'
           }}
         >
-          <div style={{ padding: '6px', borderBottom: '1px solid #333' }}>
+          <div style={{ padding: '6px', borderBottom: '1px solid var(--vscode-panel-border, #333)' }}>
             <div style={{ position: 'relative' }}>
               <Search
                 size={12}
@@ -101,7 +101,7 @@ export default function SearchableSelect({
                   left: '8px',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  color: '#71717a'
+                  color: 'var(--vscode-descriptionForeground, #71717a)'
                 }}
               />
               <input
@@ -113,11 +113,11 @@ export default function SearchableSelect({
                 style={{
                   width: '100%',
                   padding: '6px 8px 6px 28px',
-                  backgroundColor: '#0a0a0a',
-                  border: '1px solid #333',
+                  backgroundColor: 'var(--vscode-editor-background, #0a0a0a)',
+                  border: '1px solid var(--vscode-panel-border, #333)',
                   borderRadius: '3px',
                   fontSize: '11px',
-                  color: '#d4d4d8',
+                  color: 'var(--vscode-foreground, #d4d4d8)',
                   fontFamily: 'monospace',
                   outline: 'none'
                 }}
@@ -130,13 +130,13 @@ export default function SearchableSelect({
               style={{
                 padding: '6px 10px',
                 fontSize: '11px',
-                color: !value ? '#60a5fa' : '#71717a',
+                color: !value ? 'var(--vscode-textLink-foreground, #60a5fa)' : 'var(--vscode-descriptionForeground, #71717a)',
                 fontFamily: 'monospace',
                 cursor: 'pointer',
                 backgroundColor: !value ? 'rgba(96, 165, 250, 0.1)' : 'transparent'
               }}
               onMouseEnter={(e) => {
-                if (value) e.currentTarget.style.backgroundColor = '#222';
+                if (value) e.currentTarget.style.backgroundColor = 'var(--vscode-editorWidget-background, #222)';
               }}
               onMouseLeave={(e) => {
                 if (value) e.currentTarget.style.backgroundColor = 'transparent';
@@ -151,13 +151,13 @@ export default function SearchableSelect({
                 style={{
                   padding: '6px 10px',
                   fontSize: '11px',
-                  color: value === opt ? '#60a5fa' : '#d4d4d8',
+                  color: value === opt ? 'var(--vscode-textLink-foreground, #60a5fa)' : 'var(--vscode-foreground, #d4d4d8)',
                   fontFamily: 'monospace',
                   cursor: 'pointer',
                   backgroundColor: value === opt ? 'rgba(96, 165, 250, 0.1)' : 'transparent'
                 }}
                 onMouseEnter={(e) => {
-                  if (value !== opt) e.currentTarget.style.backgroundColor = '#222';
+                  if (value !== opt) e.currentTarget.style.backgroundColor = 'var(--vscode-editorWidget-background, #222)';
                 }}
                 onMouseLeave={(e) => {
                   if (value !== opt) e.currentTarget.style.backgroundColor = 'transparent';
@@ -167,7 +167,7 @@ export default function SearchableSelect({
               </div>
             ))}
             {filteredOptions.length === 0 && (
-              <div style={{ padding: '10px', fontSize: '11px', color: '#71717a', fontFamily: 'monospace', textAlign: 'center' }}>
+              <div style={{ padding: '10px', fontSize: '11px', color: 'var(--vscode-descriptionForeground, #71717a)', fontFamily: 'monospace', textAlign: 'center' }}>
                 No fields found
               </div>
             )}

@@ -28,7 +28,7 @@ const LogRow = memo(({ log, isSelected, onClick, activeSearchTerms, getLevelBord
         if (match.index >= lastIndex) {
           parts.push(text.slice(lastIndex, match.index));
           parts.push(
-            <span key={match.index} style={{ backgroundColor: '#facc15', color: '#000', padding: '0 2px' }}>
+            <span key={match.index} style={{ backgroundColor: 'var(--vscode-editor-findMatchHighlightBackground, #facc15)', color: 'var(--vscode-editor-foreground, #000)', padding: '0 2px' }}>
               {match[0]}
             </span>
           );
@@ -51,9 +51,9 @@ const LogRow = memo(({ log, isSelected, onClick, activeSearchTerms, getLevelBord
       <div
         onClick={onClick}
         style={{
-          backgroundColor: isSelected ? '#1a1a2e' : '#0f0f0f',
-          border: '1px solid #1a1a1a',
-          borderLeft: '3px solid #71717a',
+          backgroundColor: isSelected ? 'var(--vscode-editorWidget-background, #1a1a2e)' : 'var(--vscode-editor-background, #0f0f0f)',
+          border: '1px solid var(--vscode-editorWidget-background, #1a1a1a)',
+          borderLeft: '3px solid var(--vscode-descriptionForeground, #71717a)',
           marginBottom: '1px',
           cursor: 'pointer',
           padding: '4px 6px',
@@ -66,7 +66,7 @@ const LogRow = memo(({ log, isSelected, onClick, activeSearchTerms, getLevelBord
         <div
           style={{
             fontSize: '11px',
-            color: '#d4d4d8',
+            color: 'var(--vscode-foreground, #d4d4d8)',
             flex: 1,
             fontFamily: 'monospace',
             whiteSpace: 'pre-wrap',
@@ -88,8 +88,8 @@ const LogRow = memo(({ log, isSelected, onClick, activeSearchTerms, getLevelBord
     <div
       onClick={onClick}
       style={{
-        backgroundColor: isSelected ? '#1a1a2e' : '#0f0f0f',
-        border: '1px solid #1a1a1a',
+        backgroundColor: isSelected ? 'var(--vscode-editorWidget-background, #1a1a2e)' : 'var(--vscode-editor-background, #0f0f0f)',
+        border: '1px solid var(--vscode-editorWidget-background, #1a1a1a)',
         borderLeft: `3px solid ${getLevelBorderColor(logLevel)}`,
         marginBottom: '1px',
         cursor: 'pointer',
@@ -101,14 +101,14 @@ const LogRow = memo(({ log, isSelected, onClick, activeSearchTerms, getLevelBord
       }}
     >
       {logTimestamp && (
-        <span style={{ fontSize: '10px', color: '#52525b', fontFamily: 'monospace', whiteSpace: 'nowrap', flexShrink: 0, paddingTop: '1px' }}>
+        <span style={{ fontSize: '10px', color: 'var(--vscode-disabledForeground, #52525b)', fontFamily: 'monospace', whiteSpace: 'nowrap', flexShrink: 0, paddingTop: '1px' }}>
           {logTimestamp}
         </span>
       )}
       <div
         style={{
           fontSize: '11px',
-          color: '#d4d4d8',
+          color: 'var(--vscode-foreground, #d4d4d8)',
           flex: 1,
           fontFamily: 'monospace',
           whiteSpace: 'pre-wrap',
@@ -125,9 +125,9 @@ const LogRow = memo(({ log, isSelected, onClick, activeSearchTerms, getLevelBord
               const valueStr = typeof value === 'object' ? JSON.stringify(value) : String(value);
               return (
                 <span key={field}>
-                  <span style={{ color: '#71717a' }}>{field}:</span>
+                  <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>{field}:</span>
                   <span> {highlightText(valueStr, activeSearchTerms)}</span>
-                  {index < visibleFields.length - 1 && <span style={{ color: '#3f3f46' }}> | </span>}
+                  {index < visibleFields.length - 1 && <span style={{ color: 'var(--vscode-panel-border, #3f3f46)' }}> | </span>}
                 </span>
               );
             })}

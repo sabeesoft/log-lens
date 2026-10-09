@@ -21,7 +21,7 @@ export default function OrderBySection({
     <CollapsibleSection
       title="ORDER BY"
       icon={<ArrowUpDown size={12} />}
-      iconColor="#a78bfa"
+      iconColor="var(--vscode-charts-purple, #a78bfa)"
       defaultExpanded={false}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
@@ -34,7 +34,7 @@ export default function OrderBySection({
         />
 
         {orderByField && (
-          <div style={{ display: 'flex', backgroundColor: '#222', borderRadius: '3px', padding: '1px' }}>
+          <div style={{ display: 'flex', backgroundColor: 'var(--vscode-editorWidget-background, #222)', borderRadius: '3px', padding: '1px' }}>
             <button
               onClick={() => onDirectionChange('asc')}
               style={{
@@ -44,8 +44,8 @@ export default function OrderBySection({
                 fontWeight: 700,
                 border: 'none',
                 cursor: 'pointer',
-                backgroundColor: orderByDirection === 'asc' ? '#3b82f6' : 'transparent',
-                color: orderByDirection === 'asc' ? '#fff' : '#71717a',
+                backgroundColor: orderByDirection === 'asc' ? 'var(--vscode-charts-blue, #3b82f6)' : 'transparent',
+                color: orderByDirection === 'asc' ? 'var(--vscode-foreground, #fff)' : 'var(--vscode-descriptionForeground, #71717a)',
                 fontFamily: 'monospace'
               }}
             >
@@ -60,8 +60,8 @@ export default function OrderBySection({
                 fontWeight: 700,
                 border: 'none',
                 cursor: 'pointer',
-                backgroundColor: orderByDirection === 'desc' ? '#3b82f6' : 'transparent',
-                color: orderByDirection === 'desc' ? '#fff' : '#71717a',
+                backgroundColor: orderByDirection === 'desc' ? 'var(--vscode-charts-blue, #3b82f6)' : 'transparent',
+                color: orderByDirection === 'desc' ? 'var(--vscode-foreground, #fff)' : 'var(--vscode-descriptionForeground, #71717a)',
                 fontFamily: 'monospace'
               }}
             >

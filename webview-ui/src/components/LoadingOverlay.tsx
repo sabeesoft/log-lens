@@ -33,7 +33,7 @@ export default function LoadingOverlay({ visible }: LoadingOverlayProps) {
       >
         <Loader2
           size={32}
-          color="#3b82f6"
+          color="var(--vscode-charts-blue, #3b82f6)"
           style={{
             animation: 'spin 1s linear infinite'
           }}
@@ -41,7 +41,7 @@ export default function LoadingOverlay({ visible }: LoadingOverlayProps) {
         <span
           style={{
             fontSize: '13px',
-            color: '#a1a1aa',
+            color: 'var(--vscode-descriptionForeground, #a1a1aa)',
             fontFamily: 'monospace'
           }}
         >

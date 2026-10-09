@@ -20,11 +20,11 @@ export default function FieldDepthSection({
     <CollapsibleSection
       title="FIELD DEPTH"
       icon={<Layers size={12} />}
-      iconColor="#10b981"
+      iconColor="var(--vscode-charts-green, #10b981)"
       defaultExpanded={false}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <div style={{ fontSize: '9px', color: '#71717a', fontFamily: 'monospace' }}>
+        <div style={{ fontSize: '9px', color: 'var(--vscode-descriptionForeground, #71717a)', fontFamily: 'monospace' }}>
           Control how deep nested fields are extracted for filtering and display
         </div>
 
@@ -43,11 +43,11 @@ export default function FieldDepthSection({
             style={{
               width: '60px',
               padding: '4px 8px',
-              backgroundColor: '#1a1a1a',
-              border: '1px solid #333',
+              backgroundColor: 'var(--vscode-editorWidget-background, #1a1a1a)',
+              border: '1px solid var(--vscode-panel-border, #333)',
               borderRadius: '3px',
               fontSize: '11px',
-              color: '#d4d4d8',
+              color: 'var(--vscode-foreground, #d4d4d8)',
               fontFamily: 'monospace',
               textAlign: 'center'
             }}
@@ -65,8 +65,8 @@ export default function FieldDepthSection({
                   fontWeight: 600,
                   border: 'none',
                   cursor: 'pointer',
-                  backgroundColor: fieldDepth === depth ? '#3b82f6' : '#222',
-                  color: fieldDepth === depth ? '#fff' : '#71717a',
+                  backgroundColor: fieldDepth === depth ? 'var(--vscode-charts-blue, #3b82f6)' : 'var(--vscode-editorWidget-background, #222)',
+                  color: fieldDepth === depth ? 'var(--vscode-foreground, #fff)' : 'var(--vscode-descriptionForeground, #71717a)',
                   fontFamily: 'monospace'
                 }}
               >
@@ -86,8 +86,8 @@ export default function FieldDepthSection({
               fontWeight: 700,
               border: 'none',
               cursor: hasChanges ? 'pointer' : 'not-allowed',
-              backgroundColor: hasChanges ? '#10b981' : '#1a1a1a',
-              color: hasChanges ? '#fff' : '#52525b',
+              backgroundColor: hasChanges ? 'var(--vscode-charts-green, #10b981)' : 'var(--vscode-editorWidget-background, #1a1a1a)',
+              color: hasChanges ? 'var(--vscode-foreground, #fff)' : 'var(--vscode-disabledForeground, #52525b)',
               fontFamily: 'monospace',
               opacity: hasChanges ? 1 : 0.6
             }}
@@ -99,12 +99,12 @@ export default function FieldDepthSection({
         <div style={{
           marginTop: '4px',
           padding: '6px',
-          backgroundColor: '#0a0a0a',
+          backgroundColor: 'var(--vscode-editor-background, #0a0a0a)',
           borderRadius: '3px',
-          border: '1px solid #1a1a1a'
+          border: '1px solid var(--vscode-editorWidget-background, #1a1a1a)'
         }}>
-          <div style={{ fontSize: '8px', color: '#71717a', fontFamily: 'monospace' }}>
-            <div style={{ marginBottom: '2px', color: '#a1a1aa', fontWeight: 600 }}>DEPTH EXAMPLES</div>
+          <div style={{ fontSize: '8px', color: 'var(--vscode-descriptionForeground, #71717a)', fontFamily: 'monospace' }}>
+            <div style={{ marginBottom: '2px', color: 'var(--vscode-descriptionForeground, #a1a1aa)', fontWeight: 600 }}>DEPTH EXAMPLES</div>
             <div>• Depth 1: only top-level fields (e.g., message, level)</div>
             <div>• Depth 2: one level of nesting (e.g., message.text)</div>
             <div>• Depth 3+: deeper nested fields (e.g., data.user.profile)</div>
@@ -114,15 +114,15 @@ export default function FieldDepthSection({
         {hasChanges && (
           <div style={{
             fontSize: '9px',
-            color: '#f59e0b',
+            color: 'var(--vscode-charts-yellow, #f59e0b)',
             fontFamily: 'monospace',
             display: 'flex',
             alignItems: 'center',
             gap: '4px'
           }}>
             <span>Pending: {fieldDepth}</span>
-            <span style={{ color: '#52525b' }}>|</span>
-            <span style={{ color: '#71717a' }}>Current: {appliedFieldDepth}</span>
+            <span style={{ color: 'var(--vscode-disabledForeground, #52525b)' }}>|</span>
+            <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>Current: {appliedFieldDepth}</span>
           </div>
         )}
       </div>

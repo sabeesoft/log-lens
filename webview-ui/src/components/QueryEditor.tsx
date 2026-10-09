@@ -2,23 +2,27 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { tokenize } from '../lib/logql';
 import type { Token, TokenType } from '../lib/logql';
 
-// VS Code-dark-ish token colors
+// Token colors mapped to VS Code's debug-token theme variables so the query
+// editor's syntax highlighting follows the active color theme.
 const TOKEN_COLORS: Partial<Record<TokenType, string>> = {
-  string: '#ce9178',
-  regex: '#d16969',
-  number: '#b5cea8',
-  bool: '#569cd6',
-  op: '#d4d4d4',
-  pipe: '#6b7280',
-  ident: '#9cdcfe',
-  lparen: '#d4d4d4',
-  rparen: '#d4d4d4',
-  lbracket: '#d4d4d4',
-  rbracket: '#d4d4d4',
-  comma: '#d4d4d4',
+  string: 'var(--vscode-debugTokenExpression-string, #ce9178)',
+  regex: 'var(--vscode-debugTokenExpression-error, #d16969)',
+  number: 'var(--vscode-debugTokenExpression-number, #b5cea8)',
+  bool: 'var(--vscode-debugTokenExpression-boolean, #569cd6)',
+  op: 'var(--vscode-foreground, #d4d4d4)',
+  pipe: 'var(--vscode-disabledForeground, #6b7280)',
+  ident: 'var(--vscode-debugTokenExpression-name, #9cdcfe)',
+  lparen: 'var(--vscode-foreground, #d4d4d4)',
+  rparen: 'var(--vscode-foreground, #d4d4d4)',
+  lbracket: 'var(--vscode-foreground, #d4d4d4)',
+  rbracket: 'var(--vscode-foreground, #d4d4d4)',
+  comma: 'var(--vscode-foreground, #d4d4d4)',
 };
 const COMMAND_KW = new Set(['fields', 'filter', 'sort', 'limit']);
-const keywordColor = (value: string) => (COMMAND_KW.has(value) ? '#569cd6' : '#c586c0');
+const keywordColor = (value: string) =>
+  COMMAND_KW.has(value)
+    ? 'var(--vscode-debugTokenExpression-boolean, #569cd6)'
+    : 'var(--vscode-symbolIcon-keywordForeground, #c586c0)';
 
 const FONT = "13px 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace";
 const LINE_HEIGHT = 20;
@@ -207,7 +211,7 @@ export default function QueryEditor({
     }
   };
 
-  const borderColor = hasErrors ? '#ef4444' : active ? '#3b82f6' : focused ? '#3f3f46' : '#2a2a2a';
+  const borderColor = hasErrors ? 'var(--vscode-charts-red, #ef4444)' : active ? 'var(--vscode-charts-blue, #3b82f6)' : focused ? 'var(--vscode-panel-border, #3f3f46)' : 'var(--vscode-input-background, #2a2a2a)';
 
   return (
     <div style={{ position: 'relative', flex: 1 }}>
@@ -224,7 +228,7 @@ export default function QueryEditor({
         style={{
           position: 'relative',
           display: 'flex',
-          backgroundColor: '#1a1a1a',
+          backgroundColor: 'var(--vscode-editorWidget-background, #1a1a1a)',
           border: `1px solid ${borderColor}`,
           borderRadius: '6px',
           overflow: 'hidden',
@@ -238,11 +242,11 @@ export default function QueryEditor({
             width: gutterWidth,
             flexShrink: 0,
             padding: `${PAD}px 0`,
-            backgroundColor: '#161616',
-            borderRight: '1px solid #262626',
+            backgroundColor: 'var(--vscode-sideBar-background, #161616)',
+            borderRight: '1px solid var(--vscode-input-background, #262626)',
             font: FONT,
             lineHeight: `${LINE_HEIGHT}px`,
-            color: '#52525b',
+            color: 'var(--vscode-disabledForeground, #52525b)',
             textAlign: 'right',
             userSelect: 'none',
           }}
@@ -270,11 +274,11 @@ export default function QueryEditor({
               position: 'absolute',
               inset: 0,
               pointerEvents: 'none',
-              color: '#d4d4d8',
+              color: 'var(--vscode-foreground, #d4d4d8)',
             }}
           >
             {value.length === 0 ? (
-              <span style={{ color: '#4b4b53' }}>
+              <span style={{ color: 'var(--vscode-panel-border, #4b4b53)' }}>
                 {'fields @timestamp, level, message | filter level = "error" | sort @timestamp desc'}
               </span>
             ) : (
@@ -324,7 +328,7 @@ export default function QueryEditor({
               whiteSpace: 'pre',
               overflow: 'auto',
               color: 'transparent',
-              caretColor: '#e4e4e7',
+              caretColor: 'var(--vscode-foreground, #e4e4e7)',
               boxSizing: 'border-box',
             }}
           />
@@ -342,7 +346,7 @@ export default function QueryEditor({
               border: 'none',
               cursor: 'pointer',
               padding: '3px',
-              color: '#71717a',
+              color: 'var(--vscode-descriptionForeground, #71717a)',
               display: 'flex',
               borderRadius: '4px',
             }}
@@ -366,8 +370,8 @@ export default function QueryEditor({
             minWidth: '200px',
             maxHeight: '240px',
             overflowY: 'auto',
-            backgroundColor: '#1f1f1f',
-            border: '1px solid #3a3a3a',
+            backgroundColor: 'var(--vscode-input-background, #1f1f1f)',
+            border: '1px solid var(--vscode-panel-border, #3a3a3a)',
             borderRadius: '6px',
             boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
             font: FONT,
@@ -389,15 +393,17 @@ export default function QueryEditor({
                 padding: '4px 8px',
                 borderRadius: '4px',
                 cursor: 'pointer',
-                backgroundColor: i === activeIdx ? '#2d3f5f' : 'transparent',
-                color: '#e4e4e7',
+                backgroundColor: i === activeIdx ? 'var(--vscode-panel-border, #2d3f5f)' : 'transparent',
+                color: 'var(--vscode-foreground, #e4e4e7)',
               }}
             >
               <span
                 style={{
                   fontSize: '9px',
                   fontWeight: 700,
-                  color: s.kind === 'keyword' ? '#569cd6' : '#9cdcfe',
+                  color: s.kind === 'keyword'
+                    ? 'var(--vscode-debugTokenExpression-boolean, #569cd6)'
+                    : 'var(--vscode-debugTokenExpression-name, #9cdcfe)',
                   width: '14px',
                 }}
               >
@@ -426,16 +432,16 @@ function buildSegments(input: string): Segment[] {
   for (const tok of tokens as Token[]) {
     if (tok.type === 'eof') break;
     if (tok.start > last) {
-      segments.push({ text: input.slice(last, tok.start), color: '#d4d4d8' });
+      segments.push({ text: input.slice(last, tok.start), color: 'var(--vscode-foreground, #d4d4d8)' });
     }
     const raw = input.slice(tok.start, tok.end);
     const color =
-      tok.type === 'keyword' ? keywordColor(tok.value) : TOKEN_COLORS[tok.type] ?? '#d4d4d8';
+      tok.type === 'keyword' ? keywordColor(tok.value) : TOKEN_COLORS[tok.type] ?? 'var(--vscode-foreground, #d4d4d8)';
     segments.push({ text: raw, color });
     last = tok.end;
   }
   if (last < input.length) {
-    segments.push({ text: input.slice(last), color: '#d4d4d8' });
+    segments.push({ text: input.slice(last), color: 'var(--vscode-foreground, #d4d4d8)' });
   }
   return segments;
 }

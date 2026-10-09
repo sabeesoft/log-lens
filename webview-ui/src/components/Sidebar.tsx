@@ -25,17 +25,17 @@ const TreeNode = ({ value, nodeKey, depth }: { value: any; nodeKey: string | nul
   if (value === null || value === undefined) {
     return (
       <div style={{ marginLeft: `${indent}px`, fontFamily: 'monospace', fontSize: '11px' }}>
-        {nodeKey && <span style={{ color: '#60a5fa' }}>{nodeKey}: </span>}
-        <span style={{ color: '#71717a' }}>{String(value)}</span>
+        {nodeKey && <span style={{ color: 'var(--vscode-textLink-foreground, #60a5fa)' }}>{nodeKey}: </span>}
+        <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>{String(value)}</span>
       </div>
     );
   }
 
   if (typeof value !== 'object') {
-    const color = typeof value === 'string' ? '#34d399' : typeof value === 'boolean' ? '#f59e0b' : '#a78bfa';
+    const color = typeof value === 'string' ? 'var(--vscode-charts-green, #34d399)' : typeof value === 'boolean' ? 'var(--vscode-charts-yellow, #f59e0b)' : 'var(--vscode-charts-purple, #a78bfa)';
     return (
       <div style={{ marginLeft: `${indent}px`, fontFamily: 'monospace', fontSize: '11px' }}>
-        {nodeKey && <span style={{ color: '#60a5fa' }}>{nodeKey}: </span>}
+        {nodeKey && <span style={{ color: 'var(--vscode-textLink-foreground, #60a5fa)' }}>{nodeKey}: </span>}
         <span style={{ color }}>{typeof value === 'string' ? `"${value}"` : String(value)}</span>
       </div>
     );
@@ -50,28 +50,28 @@ const TreeNode = ({ value, nodeKey, depth }: { value: any; nodeKey: string | nul
       <div style={{ marginLeft: `${indent}px`, fontFamily: 'monospace', fontSize: '11px' }}>
         <div
           onClick={() => setExpanded(!expanded)}
-          style={{ cursor: 'pointer', color: '#d4d4d8', userSelect: 'none' }}
+          style={{ cursor: 'pointer', color: 'var(--vscode-foreground, #d4d4d8)', userSelect: 'none' }}
         >
-          <span style={{ color: '#71717a', marginRight: '4px' }}>{expanded ? '▼' : '▶'}</span>
-          {nodeKey && <span style={{ color: '#60a5fa' }}>{nodeKey}: </span>}
-          <span style={{ color: '#71717a' }}>{bracket[0]}</span>
-          {!expanded && <span style={{ color: '#71717a' }}>...</span>}
-          {!expanded && <span style={{ color: '#71717a' }}>{bracket[1]}</span>}
+          <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)', marginRight: '4px' }}>{expanded ? '▼' : '▶'}</span>
+          {nodeKey && <span style={{ color: 'var(--vscode-textLink-foreground, #60a5fa)' }}>{nodeKey}: </span>}
+          <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>{bracket[0]}</span>
+          {!expanded && <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>...</span>}
+          {!expanded && <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>{bracket[1]}</span>}
         </div>
         {expanded && (
           <>
             {entries.map(([k, v]) => (
               <TreeNode key={`${nodeKey || 'root'}-${k}`} value={v} nodeKey={k} depth={depth + 1} />
             ))}
-            <div style={{ marginLeft: `${indent}px`, color: '#71717a' }}>{bracket[1]}</div>
+            <div style={{ marginLeft: `${indent}px`, color: 'var(--vscode-descriptionForeground, #71717a)' }}>{bracket[1]}</div>
           </>
         )}
       </div>
     );
   } catch (error) {
     return (
-      <div style={{ marginLeft: `${indent}px`, fontFamily: 'monospace', fontSize: '11px', color: '#ef4444' }}>
-        {nodeKey && <span style={{ color: '#60a5fa' }}>{nodeKey}: </span>}
+      <div style={{ marginLeft: `${indent}px`, fontFamily: 'monospace', fontSize: '11px', color: 'var(--vscode-charts-red, #ef4444)' }}>
+        {nodeKey && <span style={{ color: 'var(--vscode-textLink-foreground, #60a5fa)' }}>{nodeKey}: </span>}
         <span>[Error rendering value]</span>
       </div>
     );
@@ -146,9 +146,9 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
     const elements: React.ReactNode[] = [];
 
     if (typeof obj !== 'object' || obj === null) {
-      const color = obj === null ? '#71717a' :
-                    typeof obj === 'string' ? '#34d399' :
-                    typeof obj === 'boolean' ? '#f59e0b' : '#a78bfa';
+      const color = obj === null ? 'var(--vscode-descriptionForeground, #71717a)' :
+                    typeof obj === 'string' ? 'var(--vscode-charts-green, #34d399)' :
+                    typeof obj === 'boolean' ? 'var(--vscode-charts-yellow, #f59e0b)' : 'var(--vscode-charts-purple, #a78bfa)';
       const display = typeof obj === 'string' ? `"${obj}"` : String(obj);
       return [<span key="value" style={{ color }}>{display}</span>];
     }
@@ -159,7 +159,7 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
     const closeBracket = isArray ? ']' : '}';
 
     elements.push(
-      <span key="open" style={{ color: '#71717a' }}>{openBracket}</span>
+      <span key="open" style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>{openBracket}</span>
     );
 
     if (entries.length > 0) {
@@ -172,12 +172,12 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
             {childSpaces}
             {!isArray && (
               <>
-                <span style={{ color: '#60a5fa' }}>"{key}"</span>
-                <span style={{ color: '#d4d4d8' }}>: </span>
+                <span style={{ color: 'var(--vscode-textLink-foreground, #60a5fa)' }}>"{key}"</span>
+                <span style={{ color: 'var(--vscode-foreground, #d4d4d8)' }}>: </span>
               </>
             )}
             {renderPrettyJson(value, indent + 1)}
-            {idx < entries.length - 1 && <span style={{ color: '#d4d4d8' }}>,</span>}
+            {idx < entries.length - 1 && <span style={{ color: 'var(--vscode-foreground, #d4d4d8)' }}>,</span>}
             <br />
           </span>
         );
@@ -187,7 +187,7 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
     }
 
     elements.push(
-      <span key="close" style={{ color: '#71717a' }}>{closeBracket}</span>
+      <span key="close" style={{ color: 'var(--vscode-descriptionForeground, #71717a)' }}>{closeBracket}</span>
     );
 
     return elements;
@@ -218,8 +218,8 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
           width: `${width}px`,
           maxWidth: '90vw',
           height: '100%',
-          backgroundColor: '#0a0a0a',
-          borderLeft: '1px solid #222',
+          backgroundColor: 'var(--vscode-editor-background, #0a0a0a)',
+          borderLeft: '1px solid var(--vscode-editorWidget-background, #222)',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -237,12 +237,12 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
             width: '6px',
             height: '100%',
             cursor: 'ew-resize',
-            backgroundColor: isResizing ? '#3b82f6' : 'transparent',
+            backgroundColor: isResizing ? 'var(--vscode-charts-blue, #3b82f6)' : 'transparent',
             transition: 'background-color 0.15s',
             zIndex: 10
           }}
           onMouseEnter={(e) => {
-            if (!isResizing) e.currentTarget.style.backgroundColor = '#333';
+            if (!isResizing) e.currentTarget.style.backgroundColor = 'var(--vscode-panel-border, #333)';
           }}
           onMouseLeave={(e) => {
             if (!isResizing) e.currentTarget.style.backgroundColor = 'transparent';
@@ -253,13 +253,13 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
         <div
           style={{
             padding: '12px',
-            borderBottom: '1px solid #222',
+            borderBottom: '1px solid var(--vscode-editorWidget-background, #222)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between'
           }}
         >
-          <span style={{ fontSize: '12px', fontWeight: 600, color: '#a1a1aa', fontFamily: 'monospace' }}>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--vscode-descriptionForeground, #a1a1aa)', fontFamily: 'monospace' }}>
             LOG DETAILS
           </span>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -270,7 +270,7 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
                 border: 'none',
                 cursor: 'pointer',
                 padding: '4px 8px',
-                color: copied ? '#10b981' : '#71717a',
+                color: copied ? 'var(--vscode-charts-green, #10b981)' : 'var(--vscode-descriptionForeground, #71717a)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
@@ -289,7 +289,7 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
                 border: 'none',
                 cursor: 'pointer',
                 padding: '4px',
-                color: '#71717a',
+                color: 'var(--vscode-descriptionForeground, #71717a)',
                 display: 'flex',
                 alignItems: 'center'
               }}
@@ -304,7 +304,7 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
           style={{
             display: 'flex',
             gap: '0',
-            borderBottom: '1px solid #222',
+            borderBottom: '1px solid var(--vscode-editorWidget-background, #222)',
             padding: '0 12px'
           }}
         >
@@ -315,10 +315,10 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
               style={{
                 background: 'none',
                 border: 'none',
-                borderBottom: activeTab === tab ? '2px solid #60a5fa' : '2px solid transparent',
+                borderBottom: activeTab === tab ? '2px solid var(--vscode-textLink-foreground, #60a5fa)' : '2px solid transparent',
                 cursor: 'pointer',
                 padding: '8px 12px',
-                color: activeTab === tab ? '#60a5fa' : '#71717a',
+                color: activeTab === tab ? 'var(--vscode-textLink-foreground, #60a5fa)' : 'var(--vscode-descriptionForeground, #71717a)',
                 fontSize: '11px',
                 fontWeight: 600,
                 fontFamily: 'monospace',
@@ -335,10 +335,10 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
               style={{
                 background: 'none',
                 border: 'none',
-                borderBottom: activeTab === 'trace' ? '2px solid #60a5fa' : '2px solid transparent',
+                borderBottom: activeTab === 'trace' ? '2px solid var(--vscode-textLink-foreground, #60a5fa)' : '2px solid transparent',
                 cursor: 'pointer',
                 padding: '8px 12px',
-                color: activeTab === 'trace' ? '#60a5fa' : '#71717a',
+                color: activeTab === 'trace' ? 'var(--vscode-textLink-foreground, #60a5fa)' : 'var(--vscode-descriptionForeground, #71717a)',
                 fontSize: '11px',
                 fontWeight: 600,
                 fontFamily: 'monospace',
@@ -357,7 +357,7 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
             <pre
               style={{
                 fontSize: '11px',
-                color: '#d4d4d8',
+                color: 'var(--vscode-foreground, #d4d4d8)',
                 fontFamily: 'Monaco, Consolas, "Courier New", monospace',
                 margin: 0,
                 lineHeight: '1.6',
@@ -378,11 +378,11 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
                 lineHeight: '1.6',
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
-                color: '#d4d4d8'
+                color: 'var(--vscode-foreground, #d4d4d8)'
               }}
             >
               {typeof log === 'string' ? (
-                <span style={{ color: '#34d399' }}>"{log}"</span>
+                <span style={{ color: 'var(--vscode-charts-green, #34d399)' }}>"{log}"</span>
               ) : (
                 renderPrettyJson(log)
               )}
@@ -392,7 +392,7 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
           {activeTab === 'tree' && (
             <div style={{ lineHeight: '1.6' }}>
               {typeof log === 'string' ? (
-                <div style={{ fontFamily: 'monospace', fontSize: '11px', color: '#34d399' }}>"{log}"</div>
+                <div style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--vscode-charts-green, #34d399)' }}>"{log}"</div>
               ) : (
                 <TreeNode value={log} nodeKey={null} depth={0} />
               )}
@@ -405,15 +405,15 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
               <div
                 style={{
                   padding: '12px 16px',
-                  backgroundColor: '#111',
+                  backgroundColor: 'var(--vscode-sideBar-background, #111)',
                   borderRadius: '8px',
-                  border: '1px solid #222'
+                  border: '1px solid var(--vscode-editorWidget-background, #222)'
                 }}
               >
                 <div style={{ marginBottom: '6px' }}>
-                  <span style={{ color: '#71717a', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase' }}>Trace ID</span>
+                  <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase' }}>Trace ID</span>
                 </div>
-                <div style={{ color: '#60a5fa', fontSize: '12px', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                <div style={{ color: 'var(--vscode-textLink-foreground, #60a5fa)', fontSize: '12px', fontFamily: 'monospace', wordBreak: 'break-all' }}>
                   {currentTraceId}
                 </div>
               </div>
@@ -424,16 +424,16 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
                   style={{
                     flex: 1,
                     padding: '16px 12px',
-                    backgroundColor: '#111',
+                    backgroundColor: 'var(--vscode-sideBar-background, #111)',
                     borderRadius: '8px',
-                    border: '1px solid #222',
+                    border: '1px solid var(--vscode-editorWidget-background, #222)',
                     textAlign: 'center'
                   }}
                 >
-                  <div style={{ color: '#f3f4f6', fontSize: '24px', fontWeight: 600, fontFamily: 'monospace' }}>
+                  <div style={{ color: 'var(--vscode-foreground, #f3f4f6)', fontSize: '24px', fontWeight: 600, fontFamily: 'monospace' }}>
                     {traceLogs.length}
                   </div>
-                  <div style={{ color: '#71717a', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', marginTop: '4px' }}>
+                  <div style={{ color: 'var(--vscode-descriptionForeground, #71717a)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', marginTop: '4px' }}>
                     Logs
                   </div>
                 </div>
@@ -441,16 +441,16 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
                   style={{
                     flex: 1,
                     padding: '16px 12px',
-                    backgroundColor: '#111',
+                    backgroundColor: 'var(--vscode-sideBar-background, #111)',
                     borderRadius: '8px',
-                    border: '1px solid #222',
+                    border: '1px solid var(--vscode-editorWidget-background, #222)',
                     textAlign: 'center'
                   }}
                 >
-                  <div style={{ color: '#f3f4f6', fontSize: '24px', fontWeight: 600, fontFamily: 'monospace' }}>
+                  <div style={{ color: 'var(--vscode-foreground, #f3f4f6)', fontSize: '24px', fontWeight: 600, fontFamily: 'monospace' }}>
                     {new Set(traceLogs.filter(l => typeof l !== 'string').map(l => getServiceValue(l, traceConfig.serviceNameField)).filter(Boolean)).size}
                   </div>
-                  <div style={{ color: '#71717a', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', marginTop: '4px' }}>
+                  <div style={{ color: 'var(--vscode-descriptionForeground, #71717a)', fontSize: '10px', fontFamily: 'monospace', textTransform: 'uppercase', marginTop: '4px' }}>
                     Services
                   </div>
                 </div>
@@ -465,8 +465,8 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
                   justifyContent: 'center',
                   gap: '8px',
                   padding: '14px 16px',
-                  backgroundColor: '#3b82f6',
-                  color: '#fff',
+                  backgroundColor: 'var(--vscode-charts-blue, #3b82f6)',
+                  color: 'var(--vscode-foreground, #fff)',
                   border: 'none',
                   borderRadius: '8px',
                   fontSize: '12px',
@@ -475,8 +475,8 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
                   cursor: 'pointer',
                   transition: 'background-color 0.2s'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--vscode-button-background, #2563eb)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--vscode-charts-blue, #3b82f6)'}
               >
                 <ExternalLink size={14} />
                 VIEW SERVICE MAP

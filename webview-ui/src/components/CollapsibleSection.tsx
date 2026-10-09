@@ -23,9 +23,9 @@ export default function CollapsibleSection({
   return (
     <div
       style={{
-        backgroundColor: '#111',
+        backgroundColor: 'var(--vscode-sideBar-background, #111)',
         borderRadius: '6px',
-        border: '1px solid #222',
+        border: '1px solid var(--vscode-editorWidget-background, #222)',
         marginBottom: '8px',
         overflow: 'visible',
         position: 'relative'
@@ -43,11 +43,11 @@ export default function CollapsibleSection({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ color: '#71717a', display: 'flex', alignItems: 'center' }}>
+          <span style={{ color: 'var(--vscode-descriptionForeground, #71717a)', display: 'flex', alignItems: 'center' }}>
             {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
           </span>
           <span style={{ color: iconColor, display: 'flex', alignItems: 'center' }}>{icon}</span>
-          <span style={{ fontSize: '10px', fontWeight: 600, color: '#a1a1aa', fontFamily: 'monospace' }}>
+          <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--vscode-descriptionForeground, #a1a1aa)', fontFamily: 'monospace' }}>
             {title}
           </span>
         </div>

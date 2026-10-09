@@ -50,7 +50,7 @@ function renderCell(log: LogEntry, col: string, isLevel: boolean): React.ReactNo
   }
   const raw = getValue(log, col);
   if (raw === undefined || raw === null) {
-    return <span style={{ color: '#3f3f46' }}>–</span>;
+    return <span style={{ color: 'var(--vscode-panel-border, #3f3f46)' }}>–</span>;
   }
   // Colour a level column by its OWN value (nested-aware), normalising numeric
   // (Pino/Bunyan) levels to names — not an auto-detected field
@@ -65,7 +65,7 @@ function renderCell(log: LogEntry, col: string, isLevel: boolean): React.ReactNo
   if (typeof raw === 'object') {
     // Show the raw JSON value (truncated by the cell), not just the keys
     const json = JSON.stringify(raw);
-    return <span style={{ color: '#8b8b94' }} title={json}>{json}</span>;
+    return <span style={{ color: 'var(--vscode-disabledForeground, #8b8b94)' }} title={json}>{json}</span>;
   }
   return String(raw);
 }
@@ -116,15 +116,15 @@ export default function LogTable({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#0a0a0a' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'var(--vscode-editor-background, #0a0a0a)' }}>
       {/* Header row */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           height: '30px',
-          backgroundColor: '#111',
-          borderBottom: '1px solid #262626',
+          backgroundColor: 'var(--vscode-sideBar-background, #111)',
+          borderBottom: '1px solid var(--vscode-input-background, #262626)',
           flexShrink: 0,
         }}
       >
@@ -142,7 +142,7 @@ export default function LogTable({
                 alignItems: 'center',
                 gap: '4px',
                 cursor: 'pointer',
-                color: active ? '#d4d4d8' : '#71717a',
+                color: active ? 'var(--vscode-foreground, #d4d4d8)' : 'var(--vscode-descriptionForeground, #71717a)',
                 fontWeight: 600,
                 textTransform: 'uppercase',
                 letterSpacing: '0.3px',
@@ -170,21 +170,21 @@ export default function LogTable({
                   display: 'flex',
                   alignItems: 'center',
                   cursor: 'pointer',
-                  backgroundColor: selected ? '#1a1a2e' : index % 2 ? '#0c0c0c' : '#0a0a0a',
-                  borderBottom: '1px solid #141414',
+                  backgroundColor: selected ? 'var(--vscode-editorWidget-background, #1a1a2e)' : index % 2 ? 'var(--vscode-editor-background, #0c0c0c)' : 'var(--vscode-editor-background, #0a0a0a)',
+                  borderBottom: '1px solid var(--vscode-panel-border, #141414)',
                 }}
                 onClick={() => onSelectLog(index)}
                 onMouseEnter={(e) => {
-                  if (!selected) e.currentTarget.style.backgroundColor = '#141420';
+                  if (!selected) e.currentTarget.style.backgroundColor = 'var(--vscode-list-hoverBackground, #141420)';
                 }}
                 onMouseLeave={(e) => {
-                  if (!selected) e.currentTarget.style.backgroundColor = index % 2 ? '#0c0c0c' : '#0a0a0a';
+                  if (!selected) e.currentTarget.style.backgroundColor = index % 2 ? 'var(--vscode-editor-background, #0c0c0c)' : 'var(--vscode-editor-background, #0a0a0a)';
                 }}
               >
                 {columns.map((col) => (
                   <div
                     key={col}
-                    style={{ ...CELL_BASE, ...colFlex(col), color: '#d4d4d8' }}
+                    style={{ ...CELL_BASE, ...colFlex(col), color: 'var(--vscode-foreground, #d4d4d8)' }}
                     title={cellTitle(log, col)}
                   >
                     {renderCell(log, col, isLevelCol(col))}

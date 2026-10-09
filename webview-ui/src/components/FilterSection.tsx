@@ -32,7 +32,7 @@ export default function FilterSection({
     <CollapsibleSection
       title="FILTERS"
       icon={<Search size={12} />}
-      iconColor="#60a5fa"
+      iconColor="var(--vscode-textLink-foreground, #60a5fa)"
       headerRight={
         <button
           onClick={onAddFilter}
@@ -41,10 +41,10 @@ export default function FilterSection({
             alignItems: 'center',
             gap: '4px',
             padding: '2px 6px',
-            backgroundColor: '#222',
-            color: '#a1a1aa',
+            backgroundColor: 'var(--vscode-editorWidget-background, #222)',
+            color: 'var(--vscode-descriptionForeground, #a1a1aa)',
             borderRadius: '4px',
-            border: '1px solid #333',
+            border: '1px solid var(--vscode-panel-border, #333)',
             cursor: 'pointer',
             fontSize: '10px',
             fontWeight: 500,
@@ -73,8 +73,8 @@ export default function FilterSection({
       </div>
 
       <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-        <div style={{ fontSize: '11px', color: '#71717a', fontFamily: 'monospace' }}>
-          <span style={{ color: '#d4d4d8', fontWeight: 600 }}>{filteredCount}</span>/{totalCount}
+        <div style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground, #71717a)', fontFamily: 'monospace' }}>
+          <span style={{ color: 'var(--vscode-foreground, #d4d4d8)', fontWeight: 600 }}>{filteredCount}</span>/{totalCount}
         </div>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
           {hasAppliedFilters && (
@@ -82,7 +82,7 @@ export default function FilterSection({
               onClick={onClear}
               style={{
                 fontSize: '10px',
-                color: '#71717a',
+                color: 'var(--vscode-descriptionForeground, #71717a)',
                 backgroundColor: 'transparent',
                 border: 'none',
                 cursor: 'pointer',
@@ -100,8 +100,8 @@ export default function FilterSection({
               alignItems: 'center',
               gap: '4px',
               padding: '4px 12px',
-              backgroundColor: '#3b82f6',
-              color: '#fff',
+              backgroundColor: 'var(--vscode-charts-blue, #3b82f6)',
+              color: 'var(--vscode-foreground, #fff)',
               borderRadius: '4px',
               border: 'none',
               cursor: 'pointer',

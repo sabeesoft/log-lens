@@ -127,8 +127,8 @@ export default function SettingsPanel({
           width: `${width}px`,
           maxWidth: '90vw',
           height: '100%',
-          backgroundColor: '#0a0a0a',
-          borderLeft: '1px solid #222',
+          backgroundColor: 'var(--vscode-editor-background, #0a0a0a)',
+          borderLeft: '1px solid var(--vscode-editorWidget-background, #222)',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -146,12 +146,12 @@ export default function SettingsPanel({
             width: '6px',
             height: '100%',
             cursor: 'ew-resize',
-            backgroundColor: isResizing ? '#3b82f6' : 'transparent',
+            backgroundColor: isResizing ? 'var(--vscode-charts-blue, #3b82f6)' : 'transparent',
             transition: 'background-color 0.15s',
             zIndex: 10
           }}
           onMouseEnter={(e) => {
-            if (!isResizing) e.currentTarget.style.backgroundColor = '#333';
+            if (!isResizing) e.currentTarget.style.backgroundColor = 'var(--vscode-panel-border, #333)';
           }}
           onMouseLeave={(e) => {
             if (!isResizing) e.currentTarget.style.backgroundColor = 'transparent';
@@ -162,14 +162,14 @@ export default function SettingsPanel({
         <div
           style={{
             padding: '12px 16px',
-            borderBottom: '1px solid #222',
+            borderBottom: '1px solid var(--vscode-editorWidget-background, #222)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexShrink: 0
           }}
         >
-          <span style={{ fontSize: '13px', fontWeight: 600, color: '#d4d4d8', fontFamily: 'monospace' }}>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--vscode-foreground, #d4d4d8)', fontFamily: 'monospace' }}>
             FILTERS & SETTINGS
           </span>
           <button
@@ -179,7 +179,7 @@ export default function SettingsPanel({
               border: 'none',
               cursor: 'pointer',
               padding: '4px',
-              color: '#71717a',
+              color: 'var(--vscode-descriptionForeground, #71717a)',
               display: 'flex',
               alignItems: 'center'
             }}
@@ -202,7 +202,7 @@ export default function SettingsPanel({
               style={{
                 fontSize: '11px',
                 fontWeight: 600,
-                color: '#71717a',
+                color: 'var(--vscode-descriptionForeground, #71717a)',
                 fontFamily: 'monospace',
                 marginBottom: '6px',
                 textTransform: 'uppercase',
@@ -214,7 +214,7 @@ export default function SettingsPanel({
             <div style={{ position: 'relative' }}>
               <Search
                 size={13}
-                color="#52525b"
+                color="var(--vscode-disabledForeground, #52525b)"
                 style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}
               />
               <input
@@ -232,12 +232,12 @@ export default function SettingsPanel({
                 style={{
                   width: '100%',
                   padding: '8px 10px 8px 30px',
-                  backgroundColor: '#1a1a1a',
+                  backgroundColor: 'var(--vscode-editorWidget-background, #1a1a1a)',
                   border: '1px solid',
-                  borderColor: searchTerm ? '#3b82f6' : '#333',
+                  borderColor: searchTerm ? 'var(--vscode-charts-blue, #3b82f6)' : 'var(--vscode-panel-border, #333)',
                   borderRadius: '6px',
                   fontSize: '12.5px',
-                  color: '#e4e4e7',
+                  color: 'var(--vscode-foreground, #e4e4e7)',
                   fontFamily: 'monospace',
                   outline: 'none',
                   boxSizing: 'border-box',

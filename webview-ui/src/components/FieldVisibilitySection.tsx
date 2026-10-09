@@ -31,7 +31,7 @@ export default function FieldVisibilitySection({
     <CollapsibleSection
       title="VISIBLE FIELDS"
       icon={<Eye size={12} />}
-      iconColor="#10b981"
+      iconColor="var(--vscode-charts-green, #10b981)"
       defaultExpanded={false}
       headerRight={
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -47,7 +47,7 @@ export default function FieldVisibilitySection({
                 gap: '3px',
                 padding: '2px 6px',
                 backgroundColor: 'transparent',
-                color: '#71717a',
+                color: 'var(--vscode-descriptionForeground, #71717a)',
                 borderRadius: '3px',
                 border: 'none',
                 cursor: 'pointer',
@@ -61,8 +61,8 @@ export default function FieldVisibilitySection({
               reset
             </button>
           )}
-          <span style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace' }}>
-            <span style={{ color: '#10b981' }}>{visibleCount}</span>/{allFields.length}
+          <span style={{ fontSize: '10px', color: 'var(--vscode-descriptionForeground, #71717a)', fontFamily: 'monospace' }}>
+            <span style={{ color: 'var(--vscode-charts-green, #10b981)' }}>{visibleCount}</span>/{allFields.length}
           </span>
         </div>
       }
@@ -77,7 +77,7 @@ export default function FieldVisibilitySection({
               left: '8px',
               top: '50%',
               transform: 'translateY(-50%)',
-              color: '#71717a'
+              color: 'var(--vscode-descriptionForeground, #71717a)'
             }}
           />
           <input
@@ -88,11 +88,11 @@ export default function FieldVisibilitySection({
             style={{
               width: '100%',
               padding: '6px 28px 6px 28px',
-              backgroundColor: '#1a1a1a',
-              border: '1px solid #333',
+              backgroundColor: 'var(--vscode-editorWidget-background, #1a1a1a)',
+              border: '1px solid var(--vscode-panel-border, #333)',
               borderRadius: '4px',
               fontSize: '11px',
-              color: '#d4d4d8',
+              color: 'var(--vscode-foreground, #d4d4d8)',
               fontFamily: 'monospace',
               outline: 'none'
             }}
@@ -109,7 +109,7 @@ export default function FieldVisibilitySection({
                 border: 'none',
                 cursor: 'pointer',
                 padding: '2px',
-                color: '#71717a',
+                color: 'var(--vscode-descriptionForeground, #71717a)',
                 display: 'flex',
                 alignItems: 'center'
               }}
@@ -131,11 +131,11 @@ export default function FieldVisibilitySection({
               fontWeight: 600,
               fontFamily: 'monospace',
               border: '1px solid',
-              borderColor: visibleFields.includes('all') ? '#10b981' : '#333',
+              borderColor: visibleFields.includes('all') ? 'var(--vscode-charts-green, #10b981)' : 'var(--vscode-panel-border, #333)',
               borderRadius: '3px',
               cursor: 'pointer',
-              backgroundColor: visibleFields.includes('all') ? 'rgba(16, 185, 129, 0.15)' : '#1a1a1a',
-              color: visibleFields.includes('all') ? '#10b981' : '#71717a',
+              backgroundColor: visibleFields.includes('all') ? 'rgba(16, 185, 129, 0.15)' : 'var(--vscode-editorWidget-background, #1a1a1a)',
+              color: visibleFields.includes('all') ? 'var(--vscode-charts-green, #10b981)' : 'var(--vscode-descriptionForeground, #71717a)',
               transition: 'all 0.15s ease'
             }}
           >
@@ -155,11 +155,11 @@ export default function FieldVisibilitySection({
                 fontWeight: 600,
                 fontFamily: 'monospace',
                 border: '1px solid',
-                borderColor: isVisible ? '#10b981' : '#333',
+                borderColor: isVisible ? 'var(--vscode-charts-green, #10b981)' : 'var(--vscode-panel-border, #333)',
                 borderRadius: '3px',
                 cursor: 'pointer',
-                backgroundColor: isVisible ? 'rgba(16, 185, 129, 0.15)' : '#1a1a1a',
-                color: isVisible ? '#10b981' : '#71717a',
+                backgroundColor: isVisible ? 'rgba(16, 185, 129, 0.15)' : 'var(--vscode-editorWidget-background, #1a1a1a)',
+                color: isVisible ? 'var(--vscode-charts-green, #10b981)' : 'var(--vscode-descriptionForeground, #71717a)',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -169,7 +169,7 @@ export default function FieldVisibilitySection({
         })}
 
         {filteredFields.length === 0 && searchQuery && (
-          <div style={{ fontSize: '11px', color: '#71717a', fontFamily: 'monospace', padding: '8px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground, #71717a)', fontFamily: 'monospace', padding: '8px' }}>
             No fields match "{searchQuery}"
           </div>
         )}
