@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" font-family="'Liberation Sans','Noto Sans',sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f1720"/>
+      <stop offset="1" stop-color="#0a0f16"/>
+    </linearGradient>
+    <clipPath id="lens"><circle cx="64" cy="60" r="22"/></clipPath>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#bg)"/>
+
+  <!-- Logo mark (direction 1a), scaled from the 128px icon -->
+  <g transform="translate(96,92) scale(0.95)">
+    <rect width="128" height="128" rx="28" fill="#0f1720"/>
+    <g fill="#2f3d4c">
+      <rect x="22" y="30" width="78" height="8" rx="4"/>
+      <rect x="22" y="46" width="54" height="8" rx="4"/>
+      <rect x="22" y="62" width="70" height="8" rx="4"/>
+      <rect x="22" y="78" width="40" height="8" rx="4"/>
+      <rect x="22" y="94" width="62" height="8" rx="4"/>
+    </g>
+    <circle cx="64" cy="60" r="22" fill="#13283d"/>
+    <g clip-path="url(#lens)">
+      <rect x="22" y="46" width="54" height="8" rx="4" fill="#e6edf3"/>
+      <rect x="22" y="62" width="70" height="8" rx="4" fill="#f14c4c"/>
+      <rect x="22" y="30" width="78" height="8" rx="4" fill="#8aa0b4"/>
+      <rect x="22" y="78" width="40" height="8" rx="4" fill="#8aa0b4"/>
+    </g>
+    <circle cx="64" cy="60" r="25" fill="none" stroke="#4fc1ff" stroke-width="7"/>
+    <line x1="82" y1="78" x2="100" y2="96" stroke="#4fc1ff" stroke-width="10" stroke-linecap="round"/>
+  </g>
+
+  <!-- Wordmark + tagline -->
+  <text x="258" y="152" font-size="72" font-weight="700" fill="#e6edf3">Log Lens</text>
+  <text x="262" y="202" font-size="25" fill="#9db2c4">Open any JSON, NDJSON or CSV log in VS Code.</text>
+  <text x="262" y="238" font-size="25" fill="#9db2c4">Search it, filter by level, find the spike.</text>
+
+  <!-- Install pill -->
+  <g transform="translate(262,272)">
+    <rect width="420" height="40" rx="8" fill="#13283d" stroke="#23405a"/>
+    <text x="16" y="26" font-size="17" font-family="'Liberation Mono',monospace" fill="#4fc1ff">ext install sabeesoft.log-lens</text>
+  </g>
+
+  <!-- Mock log row card -->
+  <g transform="translate(96,372)">
+    <rect width="1088" height="196" rx="16" fill="#111a24" stroke="#1e2a37"/>
+
+    <!-- row 1 — error, highlighted hit -->
+    <g transform="translate(28,36)">
+      <text x="0" y="0" font-size="16" font-family="'Liberation Mono',monospace" fill="#6b8296">14:52:11.118</text>
+      <rect x="150" y="-16" width="62" height="22" rx="5" fill="#f14c4c"/>
+      <text x="162" y="0" font-size="13" font-weight="700" font-family="'Liberation Mono',monospace" fill="#0f1720">ERROR</text>
+      <text x="236" y="0" font-size="16" font-family="'Liberation Mono',monospace" fill="#c7d3de">upstream <tspan fill="#f14c4c" font-weight="700">timeout</tspan> calling payments-svc</text>
+    </g>
+
+    <!-- row 2 — warn -->
+    <g transform="translate(28,86)">
+      <text x="0" y="0" font-size="16" font-family="'Liberation Mono',monospace" fill="#6b8296">14:52:11.090</text>
+      <rect x="150" y="-16" width="54" height="22" rx="5" fill="#e0a92e"/>
+      <text x="162" y="0" font-size="13" font-weight="700" font-family="'Liberation Mono',monospace" fill="#0f1720">WARN</text>
+      <text x="236" y="0" font-size="16" font-family="'Liberation Mono',monospace" fill="#c7d3de">retry 2/3 for request 9f3a — latency 1.8s</text>
+    </g>
+
+    <!-- row 3 — info -->
+    <g transform="translate(28,136)">
+      <text x="0" y="0" font-size="16" font-family="'Liberation Mono',monospace" fill="#6b8296">14:52:10.044</text>
+      <rect x="150" y="-16" width="48" height="22" rx="5" fill="#4fc1ff"/>
+      <text x="162" y="0" font-size="13" font-weight="700" font-family="'Liberation Mono',monospace" fill="#0f1720">INFO</text>
+      <text x="236" y="0" font-size="16" font-family="'Liberation Mono',monospace" fill="#c7d3de">GET /v1/orders 200 — 42ms</text>
+    </g>
+  </g>
+</svg>
