@@ -11,9 +11,6 @@ export type ViewMode = 'search' | 'query';
 // Quote a free-text term for use as a LogQL bare term when it isn't a plain word.
 const toBareTerm = (term: string): string => (/^[\w.-]+$/.test(term) ? term : JSON.stringify(term));
 
-// Debounce handle for live query linting (see setQueryText).
-let lintTimer: ReturnType<typeof setTimeout> | undefined;
-
 interface LogState {
   // Data
   logs: LogEntry[];
@@ -325,29 +322,11 @@ export const useLogStore = create<LogState>((set, get) => ({
   }),
 
   // LogQL query actions
-  setQueryText: (text) => {
-    // Update the text immediately; lint on a short debounce so errors don't
-    // flicker on every keystroke (and mid-token states aren't flagged as you type).
-    set({ queryText: text });
-    if (lintTimer !== undefined) {
-      clearTimeout(lintTimer);
-    }
-    lintTimer = setTimeout(() => {
-      const current = get().queryText;
-      if (!current.trim()) {
-        set({ queryErrors: null });
-        return;
-      }
-      const result = parse(current);
-      set({ queryErrors: result.ok ? null : result.errors });
-    }, 350);
-  },
+  // Typing never validates or filters — the query is only parsed/applied on Run
+  // (⌘/Ctrl+Enter or the Run button). Clear any stale errors as the text changes.
+  setQueryText: (text) => set((state) => ({ queryText: text, queryErrors: state.queryErrors ? null : state.queryErrors })),
 
   runQuery: (text) => {
-    if (lintTimer !== undefined) {
-      clearTimeout(lintTimer);
-      lintTimer = undefined;
-    }
     const input = text !== undefined ? text : get().queryText;
     const trimmed = input.trim();
 
@@ -386,10 +365,6 @@ export const useLogStore = create<LogState>((set, get) => ({
   },
 
   clearQuery: () => {
-    if (lintTimer !== undefined) {
-      clearTimeout(lintTimer);
-      lintTimer = undefined;
-    }
     set({
       queryText: '',
       appliedQuery: null,

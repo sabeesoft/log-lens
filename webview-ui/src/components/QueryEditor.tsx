@@ -26,7 +26,9 @@ const keywordColor = (value: string) =>
 
 const FONT = "13px 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace";
 const LINE_HEIGHT = 20;
-const PAD = 8;
+// PAD is tuned so a single-line editor (20 + 2*7 = 34, +2 border) is 36px tall,
+// matching the 34px + border controls — the Search/Query toggle doesn't jump.
+const PAD = 7;
 
 const ALL_KEYWORDS = [
   'fields',

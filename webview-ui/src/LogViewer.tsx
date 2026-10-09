@@ -1,4 +1,5 @@
 import QueryBar from './components/QueryBar';
+import Histogram from './components/Histogram';
 import SettingsPanel from './components/SettingsPanel';
 import LogList from './components/LogList';
 import LogTable from './components/LogTable';
@@ -73,6 +74,9 @@ export default function LogViewer() {
     >
       {/* CloudWatch-style query bar (top bar: editor + Run + Filters) */}
       <QueryBar />
+
+      {/* Volume histogram bucketed from the detected timestamp field */}
+      <Histogram logs={filteredLogs} />
 
       {/* Main content area - fills remaining space */}
       <div
