@@ -146,10 +146,26 @@ export default function QueryEditor({
       label,
       kind: 'keyword',
     }));
+    // Rank fields so a match on the leaf name (e.g. `level` → `@message.level`)
+    // beats a match buried in the path; otherwise alphabetical slicing hides the
+    // fields the user actually typed behind dozens of sibling `@message.*` keys.
+    const scoreField = (f: string): number => {
+      const fl = f.toLowerCase();
+      const leaf = fl.split('.').pop() ?? fl;
+      if (leaf === lower) return 0;
+      if (leaf.startsWith(lower)) return 1;
+      if (fl.startsWith(lower)) return 2;
+      if (leaf.includes(lower)) return 3;
+      if (fl.includes(lower)) return 4;
+      return -1;
+    };
     const fields: Suggestion[] = availableFields
-      .filter((f) => f.toLowerCase().includes(lower) && f.toLowerCase() !== lower)
+      .filter((f) => f.toLowerCase() !== lower)
+      .map((f) => ({ f, s: scoreField(f) }))
+      .filter((x) => x.s >= 0)
+      .sort((a, b) => a.s - b.s || a.f.length - b.f.length || a.f.localeCompare(b.f))
       .slice(0, 8)
-      .map((label) => ({ label, kind: 'field' }));
+      .map((x) => ({ label: x.f, kind: 'field' as const }));
     const next = [...fields, ...kw].slice(0, 10);
 
     setSuggestions(next);
