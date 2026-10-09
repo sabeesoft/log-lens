@@ -311,7 +311,16 @@ export const useLogStore = create<LogState>((set, get) => ({
   }),
 
   // LogQL query actions
-  setQueryText: (text) => set({ queryText: text }),
+  setQueryText: (text) => {
+    // Live lint: surface syntax errors as the user types, without applying.
+    // Offsets are taken against the raw text so editor squiggles line up.
+    if (!text.trim()) {
+      set({ queryText: text, queryErrors: null });
+      return;
+    }
+    const result = parse(text);
+    set({ queryText: text, queryErrors: result.ok ? null : result.errors });
+  },
 
   runQuery: (text) => {
     const input = text !== undefined ? text : get().queryText;
@@ -330,7 +339,7 @@ export const useLogStore = create<LogState>((set, get) => ({
       return;
     }
 
-    const result = parse(trimmed);
+    const result = parse(input);
     if (!result.ok) {
       // Keep the previous applied query; just surface the errors
       set({ queryText: input, queryErrors: result.errors });

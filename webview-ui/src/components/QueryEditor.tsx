@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { tokenize } from '../lib/logql';
-import type { Token, TokenType } from '../lib/logql';
+import type { Token, TokenType, ParseError } from '../lib/logql';
 
 // Token colors mapped to VS Code's debug-token theme variables so the query
 // editor's syntax highlighting follows the active color theme.
@@ -49,7 +49,7 @@ interface QueryEditorProps {
   onClear: () => void;
   availableFields: string[];
   active: boolean;
-  hasErrors: boolean;
+  errors: ParseError[];
 }
 
 interface Suggestion {
@@ -64,8 +64,9 @@ export default function QueryEditor({
   onClear,
   availableFields,
   active,
-  hasErrors,
+  errors,
 }: QueryEditorProps) {
+  const hasErrors = errors.length > 0;
   const taRef = useRef<HTMLTextAreaElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
   const charRef = useRef<HTMLSpanElement>(null);
@@ -282,11 +283,23 @@ export default function QueryEditor({
                 {'fields @timestamp, level, message | filter level = "error" | sort @timestamp desc'}
               </span>
             ) : (
-              segments.map((seg, i) => (
-                <span key={i} style={{ color: seg.color }}>
-                  {seg.text}
-                </span>
-              ))
+              segments.map((seg, i) => {
+                const segEnd = seg.start + seg.text.length;
+                const errored = errors.some((e) => seg.start < e.end && segEnd > e.start);
+                return (
+                  <span
+                    key={i}
+                    style={{
+                      color: seg.color,
+                      textDecoration: errored ? 'underline wavy' : undefined,
+                      textDecorationColor: errored ? 'var(--vscode-editorError-foreground, #f14c4c)' : undefined,
+                      textDecorationSkipInk: 'none',
+                    }}
+                  >
+                    {seg.text}
+                  </span>
+                );
+              })
             )}
             {/* trailing newline so the last empty line keeps height */}
             {value.endsWith('\n') ? '​' : ''}
@@ -421,6 +434,26 @@ export default function QueryEditor({
 interface Segment {
   text: string;
   color: string;
+  start: number;
+}
+
+const DEFAULT_COLOR = 'var(--vscode-foreground, #d4d4d8)';
+const COMMENT_COLOR = 'var(--vscode-editorLineNumber-foreground, #6a9955)';
+
+// Gaps between tokens may contain whitespace and `#` line comments; color the
+// comment part so commented-out lines read as disabled.
+function pushGap(segments: Segment[], text: string, offset: number): void {
+  if (!text) return;
+  const hash = text.indexOf('#');
+  if (hash === -1) {
+    segments.push({ text, color: DEFAULT_COLOR, start: offset });
+    return;
+  }
+  const eol = text.indexOf('\n', hash);
+  const end = eol === -1 ? text.length : eol;
+  if (hash > 0) segments.push({ text: text.slice(0, hash), color: DEFAULT_COLOR, start: offset });
+  segments.push({ text: text.slice(hash, end), color: COMMENT_COLOR, start: offset + hash });
+  pushGap(segments, text.slice(end), offset + end);
 }
 
 function buildSegments(input: string): Segment[] {
@@ -432,16 +465,16 @@ function buildSegments(input: string): Segment[] {
   for (const tok of tokens as Token[]) {
     if (tok.type === 'eof') break;
     if (tok.start > last) {
-      segments.push({ text: input.slice(last, tok.start), color: 'var(--vscode-foreground, #d4d4d8)' });
+      pushGap(segments, input.slice(last, tok.start), last);
     }
     const raw = input.slice(tok.start, tok.end);
     const color =
-      tok.type === 'keyword' ? keywordColor(tok.value) : TOKEN_COLORS[tok.type] ?? 'var(--vscode-foreground, #d4d4d8)';
-    segments.push({ text: raw, color });
+      tok.type === 'keyword' ? keywordColor(tok.value) : TOKEN_COLORS[tok.type] ?? DEFAULT_COLOR;
+    segments.push({ text: raw, color, start: tok.start });
     last = tok.end;
   }
   if (last < input.length) {
-    segments.push({ text: input.slice(last), color: 'var(--vscode-foreground, #d4d4d8)' });
+    pushGap(segments, input.slice(last), last);
   }
   return segments;
 }

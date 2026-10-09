@@ -24,6 +24,77 @@ function firstObject(logs: LogEntry[]): Record<string, any> | null {
   return null;
 }
 
+const LOGQL_KEYWORDS = [
+  'fields', 'filter', 'sort', 'limit', 'and', 'or', 'not', 'in', 'like', 'asc', 'desc',
+];
+
+// 1-based line/column for a character offset into the text.
+function lineCol(text: string, offset: number): { line: number; col: number } {
+  const before = text.slice(0, Math.max(0, offset));
+  const rows = before.split('\n');
+  return { line: rows.length, col: rows[rows.length - 1].length + 1 };
+}
+
+function levenshtein(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+    }
+  }
+  return dp[m][n];
+}
+
+// Suggest the closest keyword or field for an unrecognized identifier-like token.
+function suggestFix(token: string, fields: string[]): string | null {
+  const t = token.trim();
+  if (!t || !/^[\w@.-]+$/.test(t)) return null;
+  const lower = t.toLowerCase();
+  const candidates = [...LOGQL_KEYWORDS, ...fields];
+  let best: string | null = null;
+  let bestDist = Infinity;
+  for (const c of candidates) {
+    if (c.toLowerCase() === lower) return null; // already valid
+    const d = levenshtein(lower, c.toLowerCase());
+    if (d < bestDist) {
+      bestDist = d;
+      best = c;
+    }
+  }
+  // Only suggest a close match (scaled to token length).
+  return best && bestDist <= Math.max(1, Math.floor(t.length / 3)) ? best : null;
+}
+
+// Prefix the line containing `offset` with `# ` to disable it.
+function commentOutLine(text: string, offset: number): string {
+  const lineStart = text.lastIndexOf('\n', Math.max(0, offset - 1)) + 1;
+  return text.slice(0, lineStart) + '# ' + text.slice(lineStart);
+}
+
+function QuickFix({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '1px 8px',
+        backgroundColor: 'transparent',
+        color: 'var(--vscode-textLink-foreground, #60a5fa)',
+        border: '1px solid var(--vscode-panel-border, #3f3f46)',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        fontSize: '11px',
+        fontFamily: 'monospace',
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 export default function QueryBar() {
   const mode = useLogStore((s) => s.mode);
   const setMode = useLogStore((s) => s.setMode);
@@ -162,23 +233,24 @@ export default function QueryBar() {
               onClear={clearQuery}
               availableFields={availableFields}
               active={isActive}
-              hasErrors={hasErrors}
+              errors={queryErrors ?? []}
             />
 
             <button
-              onClick={() => runQuery()}
-              title="Run query (Ctrl/Cmd + Enter)"
+              onClick={() => !hasErrors && runQuery()}
+              disabled={hasErrors}
+              title={hasErrors ? 'Fix the query errors to run' : 'Run query (Ctrl/Cmd + Enter)'}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
                 padding: '0 13px',
                 height: '34px',
-                backgroundColor: 'var(--vscode-charts-blue, #3b82f6)',
-                color: 'var(--vscode-foreground, #fff)',
+                backgroundColor: hasErrors ? 'var(--vscode-editorWidget-background, #222)' : 'var(--vscode-charts-blue, #3b82f6)',
+                color: hasErrors ? 'var(--vscode-disabledForeground, #52525b)' : 'var(--vscode-foreground, #fff)',
                 borderRadius: '6px',
-                border: '1px solid var(--vscode-charts-blue, #3b82f6)',
-                cursor: 'pointer',
+                border: `1px solid ${hasErrors ? 'var(--vscode-panel-border, #333)' : 'var(--vscode-charts-blue, #3b82f6)'}`,
+                cursor: hasErrors ? 'not-allowed' : 'pointer',
                 fontSize: '12px',
                 fontWeight: 600,
                 fontFamily: 'monospace',
@@ -233,23 +305,44 @@ export default function QueryBar() {
             gap: '2px',
           }}
         >
-          {queryErrors!.map((err, i) => (
-            <div
-              key={i}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '11.5px',
-                color: 'var(--vscode-charts-red, #fca5a5)',
-                fontFamily: 'monospace',
-              }}
-            >
-              <AlertCircle size={12} style={{ flexShrink: 0 }} />
-              <span>{err.message}</span>
-              <span style={{ color: 'var(--vscode-inputValidation-errorBackground, #7f1d1d)' }}>(pos {err.start})</span>
-            </div>
-          ))}
+          {queryErrors!.map((err, i) => {
+            const { line, col } = lineCol(queryText, err.start);
+            const token = queryText.slice(err.start, err.end);
+            const suggestion = suggestFix(token, availableFields);
+            return (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '6px',
+                  fontSize: '11.5px',
+                  color: 'var(--vscode-charts-red, #fca5a5)',
+                  fontFamily: 'monospace',
+                }}
+              >
+                <AlertCircle size={12} style={{ flexShrink: 0 }} />
+                <span style={{ color: 'var(--vscode-descriptionForeground, #a1a1aa)' }}>
+                  line {line}, col {col}
+                </span>
+                <span>· {err.message}</span>
+                {suggestion && (
+                  <QuickFix
+                    label={`Did you mean "${suggestion}"?`}
+                    onClick={() => {
+                      const next = queryText.slice(0, err.start) + suggestion + queryText.slice(err.end);
+                      runQuery(next);
+                    }}
+                  />
+                )}
+                <QuickFix
+                  label={`Comment out line ${line}`}
+                  onClick={() => runQuery(commentOutLine(queryText, err.start))}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

@@ -46,6 +46,14 @@ export class Tokenizer {
         continue;
       }
 
+      if (ch === '#') {
+        // Line comment: skip to end of line (used by the "comment out" quick fix).
+        while (this.pos < this.input.length && this.input[this.pos] !== '\n') {
+          this.pos++;
+        }
+        continue;
+      }
+
       if (ch === '*') {
         // Wildcard field selector (e.g. `fields *`)
         this.push('ident', '*', this.pos, this.pos + 1);
