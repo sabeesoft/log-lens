@@ -323,7 +323,7 @@ export default function QueryEditor({
               updateSuggestions();
             }}
             spellCheck={false}
-            rows={Math.min(Math.max(lines, 1), 8)}
+            rows={Math.min(Math.max(lines, 1), 6)}
             style={{
               display: 'block',
               position: 'relative',

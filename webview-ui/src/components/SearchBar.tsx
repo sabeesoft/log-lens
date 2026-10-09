@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { Search, X } from 'lucide-react';
 import { useLogStore } from '../store/logStore';
 import { autoDetectLevelField, getLogLevel } from '../utils/fieldMapping';
@@ -38,35 +38,12 @@ export default function SearchBar() {
   const logs = useLogStore((s) => s.logs);
 
   const levels = useMemo(() => detectLevels(logs), [logs]);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  // Live, debounced search as the user types.
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-    };
-  }, []);
-
-  const onChange = (value: string) => {
-    setSearchTerm(value);
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-    debounceRef.current = setTimeout(() => triggerSearch(), 250);
-  };
-
-  const runNow = () => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-    triggerSearch();
-  };
-
+  // Search runs on Enter (and on clear) — not on every keystroke — so large
+  // files aren't re-scanned as you type.
   const clear = () => {
     setSearchTerm('');
-    runNow();
+    triggerSearch();
   };
 
   return (
@@ -88,14 +65,14 @@ export default function SearchBar() {
         <Search size={14} style={{ color: 'var(--vscode-descriptionForeground, #a1a1aa)', flexShrink: 0 }} />
         <input
           value={searchTerm}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => setSearchTerm(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
-              runNow();
+              triggerSearch();
             }
           }}
-          placeholder="Search message and all fields…"
+          placeholder="Search message and all fields…  (Enter to run)"
           style={{
             flex: 1,
             minWidth: 0,
