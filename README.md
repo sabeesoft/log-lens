@@ -1,6 +1,25 @@
+![Log Lens](assets/hero.png)
+
 # Log Lens
 
 A powerful VS Code extension for viewing, filtering, and analyzing log files with real-time search, field visibility controls, and sorting capabilities. Supports JSON, NDJSON, and CSV formats (including AWS Athena exports with Java-style notation).
+
+## Opening logs
+
+Log Lens never needs an active editor:
+
+- **Activity Bar** → the Log Lens view → **Open Log File…** (and your recent files)
+- **Explorer** → right-click a `.json`, `.log`, `.ndjson` or `.csv` file → **Open with Log Lens**
+- **Command Palette** → `Log Lens: Open Log File…`, or load the current editor with
+  `Load Current JSON File`, `Load Log File (NDJSON)` or `Load CSV File`
+
+## Search and Query
+
+- **Search** (default) — one live input that matches the message and every field, with
+  level chips (error/warn/info/…) that understand numeric Pino/Bunyan levels
+- **Query** — a CloudWatch Logs Insights–style pipeline (`fields | filter | sort | limit`),
+  prefilled from your search. Edits apply on **⌘/Ctrl + Enter** or **Run**; syntax errors
+  lint live with line/column, a red squiggle, and "did you mean…" / "comment out" quick fixes
 
 ## Demo
 
