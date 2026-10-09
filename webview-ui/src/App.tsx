@@ -33,7 +33,23 @@ export default function App() {
     // Request initial logs
     vscode?.postMessage({ type: "requestLogs" });
 
-    return () => window.removeEventListener("message", handleMessage);
+    // Report match/total counts to the extension for the status bar item.
+    let lastMatched = -1;
+    let lastTotal = -1;
+    const unsubscribe = useLogStore.subscribe((state) => {
+      const matched = state.filteredLogs.length;
+      const total = state.logs.length;
+      if (matched !== lastMatched || total !== lastTotal) {
+        lastMatched = matched;
+        lastTotal = total;
+        vscode?.postMessage({ type: "stats", matched, total });
+      }
+    });
+
+    return () => {
+      window.removeEventListener("message", handleMessage);
+      unsubscribe();
+    };
   }, [setLogs, setFileName]);
 
   return <LogViewer />;

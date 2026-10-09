@@ -17,6 +17,11 @@
   "contributes": {
     "commands": [
       {
+        "command": "log-lens.openLogFile",
+        "title": "Log Lens: Open Log File…",
+        "icon": "$(folder-opened)"
+      },
+      {
         "command": "log-lens.loadCurrentFile",
         "title": "Log Lens: Load Current JSON File"
       },
@@ -27,8 +32,79 @@
       {
         "command": "log-lens.loadCsvFile",
         "title": "Log Lens: Load CSV File"
+      },
+      {
+        "command": "log-lens.openFromExplorer",
+        "title": "Open with Log Lens"
+      },
+      {
+        "command": "log-lens.openRecent",
+        "title": "Log Lens: Open Recent File"
+      },
+      {
+        "command": "log-lens.clearRecent",
+        "title": "Log Lens: Clear Recent Files",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "log-lens.showErrors",
+        "title": "Log Lens: Show Parse Errors"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "logLens",
+          "title": "Log Lens",
+          "icon": "assets/logo/activitybar.svg"
+        }
+      ]
+    },
+    "views": {
+      "logLens": [
+        {
+          "id": "logLens.recent",
+          "name": "Recent"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "logLens.recent",
+        "contents": "Open a JSON, NDJSON or CSV log to get started.\n[Open Log File…](command:log-lens.openLogFile)\nYou can also right-click a file in the Explorer and choose \"Open with Log Lens\"."
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "log-lens.openLogFile",
+          "when": "view == logLens.recent",
+          "group": "navigation"
+        },
+        {
+          "command": "log-lens.clearRecent",
+          "when": "view == logLens.recent",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "log-lens.openFromExplorer",
+          "when": "resourceExtname =~ /^\\.(json|log|ndjson|csv)$/",
+          "group": "navigation@9"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "log-lens.openFromExplorer",
+          "when": "false"
+        },
+        {
+          "command": "log-lens.openRecent",
+          "when": "false"
+        }
+      ]
+    }
   },
   "scripts": {
     "install:all": "npm install && cd webview-ui && npm install",
