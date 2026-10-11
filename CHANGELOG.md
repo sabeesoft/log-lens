@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.1
+
+### Changed
+- **Internal:** the query engine was extracted into the standalone
+  [`@sabeesoft/insightql`](https://www.npmjs.com/package/@sabeesoft/insightql)
+  npm package and is now consumed as a dependency. No user-facing changes.
+
 ## 2.0.0
 
 A full UI redesign plus new extension surfaces.
