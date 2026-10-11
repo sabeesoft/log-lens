@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { tokenize } from '../lib/logql';
-import type { Token, TokenType, ParseError } from '../lib/logql';
+import { tokenize } from '@sabeesoft/insightql';
+import type { Token, TokenType, ParseError } from '@sabeesoft/insightql';
 
 // The base text uses the input foreground so it is always legible; only a few
 // token kinds get an accent, with high-contrast fallbacks.

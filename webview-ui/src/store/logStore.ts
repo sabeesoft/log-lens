@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { Filter, LogEntry } from '../types';
-import { parse, run, serialize } from '../lib/logql';
-import type { Query, ParseError } from '../lib/logql';
+import { parse, run, serialize } from '@sabeesoft/insightql';
+import type { Query, ParseError } from '@sabeesoft/insightql';
 import { autoDetectLevelField, getLogLevel } from '../utils/fieldMapping';
 
 const EMPTY_QUERY: Query = { fields: null, filter: null, sort: [], limit: null };
