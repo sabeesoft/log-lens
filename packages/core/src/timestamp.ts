@@ -1,13 +1,13 @@
 const TIMESTAMP_COLUMN_NAMES = [
-  "timestamp",
-  "time",
-  "date",
-  "@timestamp",
-  "datetime",
-  "created_at",
-  "createdat",
-  "updated_at",
-  "updatedat",
+  'timestamp',
+  'time',
+  'date',
+  '@timestamp',
+  'datetime',
+  'created_at',
+  'createdat',
+  'updated_at',
+  'updatedat',
 ];
 
 export function isTimestampColumn(columnName: string): boolean {
