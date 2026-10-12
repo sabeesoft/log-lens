@@ -25,7 +25,3 @@ export function getVsCodeApi(): VsCodeApi | undefined {
   }
   return api;
 }
-
-export function postToHost(message: unknown): void {
-  getVsCodeApi()?.postMessage(message);
-}

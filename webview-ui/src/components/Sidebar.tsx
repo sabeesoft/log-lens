@@ -3,7 +3,7 @@ import { X, Copy, Check, ExternalLink, FileJson } from 'lucide-react';
 import { LogEntry } from '../types';
 import { useLogStore } from '../store/logStore';
 import { getTraceIdValue, detectTraceConfig, getServiceValue } from '../utils/traceUtils';
-import { postToHost } from '../utils/vscodeApi';
+import { getHost } from '../host';
 
 interface SidebarProps {
   log: LogEntry | null;
@@ -182,7 +182,7 @@ export default function Sidebar({ log, onClose }: SidebarProps) {
       return;
     }
     const content = typeof log === 'string' ? log : JSON.stringify(log, null, 2);
-    postToHost({ type: 'openAsJson', content, fileName });
+    getHost().openAsJson(content, fileName);
   }, [log, fileName]);
 
   // Detect trace config and get value from current log
