@@ -1,49 +1,42 @@
 import { useEffect } from "react";
 import LogViewer from "./LogViewer";
 import { useLogStore } from "./store/logStore";
-import { getVsCodeApi } from "./utils/vscodeApi";
+import { getHost } from "./host";
 
-const vscode = getVsCodeApi();
+const host = getHost();
 
 export default function App() {
   const setLogs = useLogStore((state) => state.setLogs);
   const setFileName = useLogStore((state) => state.setFileName);
 
   useEffect(() => {
-    // Listen for messages from the extension
-    const handleMessage = (event: MessageEvent) => {
-      const message = event.data;
-      switch (message.type) {
-        case "updateLogs":
-          setLogs(message.logs);
-          if (message.fileName) {
-            setFileName(message.fileName);
-          }
-          break;
+    // Receive logs from whatever is hosting the UI (VS Code, the browser, …).
+    const unsubscribeLogs = host.onLogs(({ logs, fileName }) => {
+      setLogs(logs);
+      if (fileName) {
+        setFileName(fileName);
       }
-    };
+    });
 
-    window.addEventListener("message", handleMessage);
+    // Ask the host for the initial batch.
+    host.requestInitialLogs();
 
-    // Request initial logs
-    vscode?.postMessage({ type: "requestLogs" });
-
-    // Report match/total counts to the extension for the status bar item.
+    // Report match/total counts back to the host (VS Code status bar item).
     let lastMatched = -1;
     let lastTotal = -1;
-    const unsubscribe = useLogStore.subscribe((state) => {
+    const unsubscribeStore = useLogStore.subscribe((state) => {
       const matched = state.filteredLogs.length;
       const total = state.logs.length;
       if (matched !== lastMatched || total !== lastTotal) {
         lastMatched = matched;
         lastTotal = total;
-        vscode?.postMessage({ type: "stats", matched, total });
+        host.reportStats(matched, total);
       }
     });
 
     return () => {
-      window.removeEventListener("message", handleMessage);
-      unsubscribe();
+      unsubscribeLogs();
+      unsubscribeStore();
     };
   }, [setLogs, setFileName]);
 

@@ -2,14 +2,41 @@
 
 # Log Lens
 
-A lightweight VS Code extension for reading and querying log files. Open any
-**JSON**, **NDJSON** or **CSV** log, search it, filter by level, find the spike —
-without leaving the editor. Log Lens follows your VS Code color theme (dark,
-light and high contrast).
+A lightweight log viewer for reading and querying log files. Open any **JSON**,
+**NDJSON** or **CSV** log, search it, filter by level, find the spike. One engine
+runs three ways — a **VS Code extension**, a **web app**, and an installable
+**PWA** — and **your logs never leave your machine**: no upload, no server, no
+telemetry. In the editor it follows your VS Code color theme (dark, light and
+high contrast).
+
+> **Private by design.** Log files often carry production data — tokens, emails,
+> customer records. Log Lens parses and queries everything locally, so there is
+> nothing to leak. See [Private by design](#private-by-design) below.
 
 ## Demo
 
 ![Log Lens in action](assets/demo.gif)
+
+## Private by design
+
+Log Lens is built so there is **nothing to send and nothing to collect** — and
+so you can verify that yourself:
+
+- 🔒 **100% local.** Parsing and querying run in the editor or your browser. Your
+  log files are read straight from disk into the page; they are never uploaded.
+- 📡 **Zero network calls.** The web app ships a strict Content-Security-Policy
+  with `connect-src 'none'` — the browser itself forbids it from making any
+  network request. Pull your network cable and it still works.
+- 🧪 **Enforced in CI.** A build check (`npm run check:no-network`) fails the
+  build if any network API sneaks into the source. The guarantee is tested, not
+  promised.
+- 🙈 **No telemetry, no accounts, no cookies, no third parties.** No analytics,
+  no remote fonts, no CDNs at runtime — the app can't phone home because it has
+  nowhere to call.
+- 📖 **Open source (Apache-2.0).** Don't trust us — [read the code](https://github.com/sabeesoft/log-lens).
+
+The same engine powers all three surfaces, so the privacy guarantee is identical
+whether you use the extension, the web app or the PWA.
 
 ## Opening logs
 
@@ -22,6 +49,27 @@ Log Lens never needs an active editor:
 
 While a Log Lens tab is focused, a **status bar** item shows the match count,
 the number of parse errors (click to view them) and the detected format.
+
+## In the browser — web app & PWA
+
+The same UI runs as a standalone web app, with nothing but static files behind
+it. Load a log by any of:
+
+- **Drag & drop** a file anywhere onto the page
+- **Open file** — the toolbar button, or the big button on the welcome screen
+  (uses the File System Access API where available, a file picker elsewhere)
+- **Paste** log text straight from the clipboard (⌘/Ctrl + V)
+- **Recent** — one-click reopen of files you've opened before (stored locally)
+- **Open with Log Lens** from your OS, once installed (see below)
+
+The toolbar's **Open file** menu can either replace the current logs or **add a
+file to them**, so you can merge several logs into one view.
+
+**Install it (PWA).** In a Chromium browser, use the install icon in the address
+bar to install Log Lens as a desktop app. It then works **fully offline** and
+registers as a handler for `.json` / `.ndjson` / `.log` / `.csv` files, so you
+can double-click a log or choose **Open with → Log Lens** — just like the editor
+integration, but as its own app. Nothing about the files is cached or sent.
 
 ## Search and Query
 
@@ -150,24 +198,29 @@ Development Host.
 
 ```
 log-lens/
-├── src/                        # Extension host (Node)
+├── packages/core/              # @sabeesoft/loglens-core — framework-agnostic
+│                               # parsing (JSON/NDJSON/CSV, Java notation, …),
+│                               # runs in the browser and Node, zero host deps
+├── src/                        # VS Code extension host (Node) — a thin shell
 │   ├── extension.ts            # Commands, Activity Bar view, status bar
-│   ├── fileLoader.ts           # Detect / parse / display a log file
-│   ├── panels/
-│   │   ├── LogLensPanel.ts     # Webview panel manager + messaging
-│   │   └── LogLensStatusBar.ts # Status bar item
-│   ├── parsers/                # csvParser, javaNotationParser, timestampUtils
+│   ├── fileLoader.ts           # Reads a file, parses via loglens-core, displays
+│   ├── panels/                 # Webview panel manager + status bar item
 │   ├── views/recentFiles.ts    # Recent-files tree view (globalState)
 │   └── utilities/              # getNonce, getUri
-├── webview-ui/                 # React UI (Vite)
+├── webview-ui/                 # Shared React UI (Vite)
+│   ├── public-web/             # PWA manifest, service worker, icon, _headers
+│   ├── web.html                # Web/PWA entry (vite.config.web.ts)
 │   └── src/
+│       ├── host/               # HostAdapter seam: vscodeHost / webHost
+│       ├── web/                # Web app shell: file loading, PWA, theme
 │       ├── components/         # QueryBar, QueryEditor, SearchBar, Histogram,
 │       │                       # LogTable/LogList/LogRow, Sidebar, TraceModal, …
-│       ├── lib/logql/          # LogQL tokenizer, parser, evaluator, serializer
 │       ├── store/              # Zustand store
-│       ├── hooks/ utils/ types # field discovery, mapping, helpers
+│       └── hooks/ utils/ types # field discovery, mapping, helpers
 └── assets/                     # icon + hero + logo sources
 ```
+
+The query language lives in its own package, [`@sabeesoft/insightql`](https://www.npmjs.com/package/@sabeesoft/insightql).
 
 Scripts:
 
@@ -180,10 +233,39 @@ npm run watch            # compile in watch mode
 npm run lint             # lint the extension sources
 ```
 
-Built with the VS Code Extension API, React 18, TypeScript, Zustand,
-react-window, @xyflow/react + @dagrejs/dagre (service map), csv-parse, Vite and
-Lucide icons. The query language is a small self-contained LogQL implementation
-under `webview-ui/src/lib/logql`.
+Inside `webview-ui/` (the web app / PWA):
+
+```bash
+npm run dev:web          # dev server for the standalone web app (open the root)
+npm run build:web        # production build → webview-ui/build-web/
+npm run preview:web      # preview the production build
+npm run check:no-network # fail if any network API is used in the source
+```
+
+Built with the VS Code Extension API, React 19, TypeScript, Zustand,
+react-window, @xyflow/react + @dagrejs/dagre (service map), Vite and Lucide
+icons. Parsing is [`@sabeesoft/loglens-core`](packages/core); the query language
+is [`@sabeesoft/insightql`](https://www.npmjs.com/package/@sabeesoft/insightql) —
+both self-contained and dependency-free.
+
+## Deploying the web app
+
+The web app is a folder of static files — host it anywhere, no backend required.
+
+```bash
+cd webview-ui && npm run build:web   # outputs build-web/
+```
+
+Serve `build-web/` from any static host (GitHub Pages, Netlify, Cloudflare Pages,
+or `npx serve build-web`). The build bakes a strict CSP (`connect-src 'none'`)
+into `index.html`, so the core privacy guarantee holds on any host.
+
+For defense in depth, set the security headers that can only be delivered over
+HTTP (not via `<meta>`) at the hosting layer: `public-web/_headers` does this
+automatically on **Netlify** and **Cloudflare Pages** (frame-ancestors,
+`X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, …). **GitHub Pages**
+can't set custom headers, but the CSP `<meta>` still enforces the no-network
+promise there.
 
 ## Contributing
 

@@ -6,11 +6,16 @@
   "scripts": {
     "start": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:web": "vite --config vite.config.web.ts",
+    "build:web": "tsc && vite build --config vite.config.web.ts && mv build-web/web.html build-web/index.html",
+    "preview:web": "vite preview --config vite.config.web.ts",
+    "check:no-network": "node scripts/check-no-network.mjs"
   },
   "dependencies": {
     "@dagrejs/dagre": "^1.1.4",
     "@sabeesoft/insightql": "^0.1.0",
+    "@sabeesoft/loglens-core": "file:../packages/core",
     "@tailwindcss/vite": "^4.1.18",
     "@vscode-elements/react-elements": "^2.3.1",
     "@xyflow/react": "^12.4.4",

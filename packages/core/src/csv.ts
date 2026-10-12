@@ -1,20 +1,15 @@
-import { parse } from "csv-parse/sync";
-import { parseJavaNotation } from "./javaNotationParser";
-import { isTimestampColumn, normalizeTimestamp } from "./timestampUtils";
-
-export interface CsvParseResult {
-  logs: Record<string, any>[];
-  errors: string[];
-  rowCount: number;
-}
+// Use csv-parse's browser ESM build so the core stays free of Node built-ins
+// (stream, fs, …) and runs unchanged in the browser. tsup bundles it in.
+import { parse } from 'csv-parse/browser/esm/sync';
+import { parseJavaNotation } from './javaNotation';
+import { isTimestampColumn, normalizeTimestamp } from './timestamp';
+import type { CsvParseResult } from './types';
 
 export function parseCsvContent(content: string): CsvParseResult {
   const records: Record<string, string>[] = parse(content, {
     columns: true,
-    // eslint-disable-next-line @typescript-eslint/naming-convention -- csv-parse option names are snake_case
     skip_empty_lines: true,
     trim: true,
-    // eslint-disable-next-line @typescript-eslint/naming-convention -- csv-parse option names are snake_case
     relax_column_count: true,
     cast: false,
   });
@@ -28,7 +23,7 @@ export function parseCsvContent(content: string): CsvParseResult {
       logs.push(entry);
     } catch (error) {
       errors.push(
-        `Row ${index + 1}: ${error instanceof Error ? error.message : "Transform error"}`
+        `Row ${index + 1}: ${error instanceof Error ? error.message : 'Transform error'}`
       );
       // Include the raw row as fallback
       logs.push(row);
@@ -49,7 +44,7 @@ function transformRow(row: Record<string, string>): Record<string, any> {
 }
 
 function transformValue(column: string, value: string): any {
-  if (value === undefined || value === null || value === "") {
+  if (value === undefined || value === null || value === '') {
     return null;
   }
 
@@ -62,8 +57,8 @@ function transformValue(column: string, value: string): any {
 
   // Java-style notation: {key=value, ...} or [value, ...]
   if (
-    (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
-    (trimmed.startsWith("[") && trimmed.endsWith("]"))
+    (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+    (trimmed.startsWith('[') && trimmed.endsWith(']'))
   ) {
     const parsed = parseJavaNotation(trimmed);
     // If parseJavaNotation returned something other than the raw string, it succeeded
@@ -80,15 +75,15 @@ function transformValue(column: string, value: string): any {
   }
 
   // Boolean
-  if (trimmed.toLowerCase() === "true") {
+  if (trimmed.toLowerCase() === 'true') {
     return true;
   }
-  if (trimmed.toLowerCase() === "false") {
+  if (trimmed.toLowerCase() === 'false') {
     return false;
   }
 
   // Null literal
-  if (trimmed.toLowerCase() === "null") {
+  if (trimmed.toLowerCase() === 'null') {
     return null;
   }
 

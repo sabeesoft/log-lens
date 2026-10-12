@@ -1,65 +1,15 @@
 import { ExtensionContext, Uri, window, workspace } from "vscode";
 import * as path from "path";
-import { parseCsvContent } from "./parsers/csvParser";
+import { detectFormat, parseContent } from "@sabeesoft/loglens-core";
+import type { LogFormat, ParseResult } from "@sabeesoft/loglens-core";
 import { LogLensPanel } from "./panels/LogLensPanel";
 import { addRecentFile } from "./views/recentFiles";
 
-export type LogFormat = "JSON" | "NDJSON" | "CSV";
-
-export interface ParseResult {
-  logs: any[];
-  errors: string[];
-  format: LogFormat;
-}
-
-/** Pick a format from the file extension. */
-export function detectFormat(filePath: string): LogFormat {
-  const ext = path.extname(filePath).toLowerCase();
-  if (ext === ".csv") {
-    return "CSV";
-  }
-  if (ext === ".log" || ext === ".ndjson") {
-    return "NDJSON";
-  }
-  return "JSON";
-}
-
-/** Parse NDJSON, collecting per-line errors instead of failing the whole file. */
-function parseNdjson(content: string): ParseResult {
-  const lines = content.split("\n").filter((line) => line.trim().length > 0);
-  const logs: any[] = [];
-  const errors: string[] = [];
-  lines.forEach((line, index) => {
-    try {
-      logs.push(JSON.parse(line));
-    } catch (error) {
-      errors.push(`Line ${index + 1}: ${error instanceof Error ? error.message : "Parse error"}`);
-    }
-  });
-  return { logs, errors, format: "NDJSON" };
-}
-
-/** Parse file content into log entries according to the detected format. */
-export function parseContent(content: string, format: LogFormat): ParseResult {
-  if (format === "CSV") {
-    const result = parseCsvContent(content);
-    return { logs: result.logs, errors: result.errors, format };
-  }
-  if (format === "NDJSON") {
-    return parseNdjson(content);
-  }
-  // JSON: an array (the common case) or a single object; fall back to NDJSON
-  // when a `.json` file turns out to be line-delimited.
-  try {
-    const parsed = JSON.parse(content.trim());
-    if (Array.isArray(parsed)) {
-      return { logs: parsed, errors: [], format };
-    }
-    return { logs: [parsed], errors: [], format };
-  } catch {
-    return parseNdjson(content);
-  }
-}
+// Format detection and parsing live in the framework-agnostic core so the web
+// app and PWA share the exact same implementation. Re-exported here so the rest
+// of the extension keeps importing them from a single module.
+export { detectFormat, parseContent };
+export type { LogFormat, ParseResult };
 
 /**
  * Open a Log Lens panel for an already-parsed result and record it in Recent.

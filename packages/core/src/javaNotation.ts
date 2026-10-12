@@ -52,15 +52,15 @@ class JavaNotationParser {
     this.skipWhitespace();
 
     if (this.pos >= this.input.length) {
-      return "";
+      return '';
     }
 
     const ch = this.input[this.pos];
 
-    if (ch === "{") {
+    if (ch === '{') {
       return this.parseObjectOrSet();
     }
-    if (ch === "[") {
+    if (ch === '[') {
       return this.parseArray();
     }
     return this.parsePrimitive();
@@ -83,23 +83,23 @@ class JavaNotationParser {
     let hasContent = false;
     for (let i = this.pos + 1; i < this.input.length; i++) {
       const ch = this.input[i];
-      if (ch === "{" || ch === "[") {
+      if (ch === '{' || ch === '[') {
         depth++;
         hasContent = true;
-      } else if (ch === "}" || ch === "]") {
+      } else if (ch === '}' || ch === ']') {
         if (depth === 0) {
           // Empty {} → treat as object
           return !hasContent;
         }
         depth--;
       } else if (depth === 0) {
-        if (ch !== " ") {
+        if (ch !== ' ') {
           hasContent = true;
         }
-        if (ch === "=") {
+        if (ch === '=') {
           return true;
         }
-        if (ch === ",") {
+        if (ch === ',') {
           return false;
         }
       }
@@ -109,12 +109,12 @@ class JavaNotationParser {
 
   private parseObject(): Record<string, any> {
     this.guardDepth();
-    this.expect("{");
+    this.expect('{');
     this.skipWhitespace();
 
     const result: Record<string, any> = {};
 
-    if (this.pos < this.input.length && this.input[this.pos] === "}") {
+    if (this.pos < this.input.length && this.input[this.pos] === '}') {
       this.pos++; // empty object
       this.depth--;
       return result;
@@ -123,12 +123,12 @@ class JavaNotationParser {
     while (this.pos < this.input.length) {
       this.skipWhitespace();
       const key = this.readKey();
-      this.expect("=");
+      this.expect('=');
       const value = this.parseValue();
       result[key] = value;
 
       this.skipWhitespace();
-      if (this.pos < this.input.length && this.input[this.pos] === ",") {
+      if (this.pos < this.input.length && this.input[this.pos] === ',') {
         this.pos++; // consume comma
         this.skipWhitespace();
       } else {
@@ -136,19 +136,19 @@ class JavaNotationParser {
       }
     }
 
-    this.expect("}");
+    this.expect('}');
     this.depth--;
     return result;
   }
 
   private parseSetAsArray(): any[] {
     this.guardDepth();
-    this.expect("{");
+    this.expect('{');
     this.skipWhitespace();
 
     const result: any[] = [];
 
-    if (this.pos < this.input.length && this.input[this.pos] === "}") {
+    if (this.pos < this.input.length && this.input[this.pos] === '}') {
       this.pos++;
       this.depth--;
       return result;
@@ -160,7 +160,7 @@ class JavaNotationParser {
       result.push(value);
 
       this.skipWhitespace();
-      if (this.pos < this.input.length && this.input[this.pos] === ",") {
+      if (this.pos < this.input.length && this.input[this.pos] === ',') {
         this.pos++;
         this.skipWhitespace();
       } else {
@@ -168,19 +168,19 @@ class JavaNotationParser {
       }
     }
 
-    this.expect("}");
+    this.expect('}');
     this.depth--;
     return result;
   }
 
   private parseArray(): any[] {
     this.guardDepth();
-    this.expect("[");
+    this.expect('[');
     this.skipWhitespace();
 
     const result: any[] = [];
 
-    if (this.pos < this.input.length && this.input[this.pos] === "]") {
+    if (this.pos < this.input.length && this.input[this.pos] === ']') {
       this.pos++; // empty array
       this.depth--;
       return result;
@@ -192,7 +192,7 @@ class JavaNotationParser {
       result.push(value);
 
       this.skipWhitespace();
-      if (this.pos < this.input.length && this.input[this.pos] === ",") {
+      if (this.pos < this.input.length && this.input[this.pos] === ',') {
         this.pos++; // consume comma
         this.skipWhitespace();
       } else {
@@ -200,7 +200,7 @@ class JavaNotationParser {
       }
     }
 
-    this.expect("]");
+    this.expect(']');
     this.depth--;
     return result;
   }
@@ -209,13 +209,13 @@ class JavaNotationParser {
     const raw = this.readUntilDelimiter();
     const trimmed = raw.trim();
 
-    if (trimmed === "null") {
+    if (trimmed === 'null') {
       return null;
     }
-    if (trimmed === "true") {
+    if (trimmed === 'true') {
       return true;
     }
-    if (trimmed === "false") {
+    if (trimmed === 'false') {
       return false;
     }
     if (/^-?\d+(\.\d+)?$/.test(trimmed) && trimmed.length <= 15) {
@@ -231,7 +231,7 @@ class JavaNotationParser {
     const start = this.pos;
     while (this.pos < this.input.length) {
       const ch = this.input[this.pos];
-      if (ch === "=" || ch === "," || ch === "{" || ch === "}" || ch === "[" || ch === "]") {
+      if (ch === '=' || ch === ',' || ch === '{' || ch === '}' || ch === '[' || ch === ']') {
         break;
       }
       this.pos++;
@@ -250,7 +250,7 @@ class JavaNotationParser {
     const start = this.pos;
     while (this.pos < this.input.length) {
       const ch = this.input[this.pos];
-      if (ch === "," || ch === "}" || ch === "]") {
+      if (ch === ',' || ch === '}' || ch === ']') {
         break;
       }
       this.pos++;
@@ -262,14 +262,14 @@ class JavaNotationParser {
     this.skipWhitespace();
     if (this.pos >= this.input.length || this.input[this.pos] !== ch) {
       throw new Error(
-        `Expected '${ch}' at position ${this.pos}, got '${this.input[this.pos] ?? "EOF"}'`
+        `Expected '${ch}' at position ${this.pos}, got '${this.input[this.pos] ?? 'EOF'}'`
       );
     }
     this.pos++;
   }
 
   skipWhitespace(): void {
-    while (this.pos < this.input.length && this.input[this.pos] === " ") {
+    while (this.pos < this.input.length && this.input[this.pos] === ' ') {
       this.pos++;
     }
   }
@@ -277,7 +277,7 @@ class JavaNotationParser {
   private guardDepth(): void {
     this.depth++;
     if (this.depth > MAX_DEPTH) {
-      throw new Error("Maximum nesting depth exceeded");
+      throw new Error('Maximum nesting depth exceeded');
     }
   }
 }

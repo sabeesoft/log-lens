@@ -1,0 +1,17 @@
+# Security headers for the Log Lens web app.
+#
+# This file is understood by Netlify and Cloudflare Pages (served from the site
+# root, copied here by the Vite build). It sets the headers that cannot be
+# delivered via <meta> — chiefly frame-ancestors / X-Frame-Options — and repeats
+# the CSP as a response header for defense in depth.
+#
+# GitHub Pages ignores this file (it can't set custom headers); there the CSP
+# <meta> baked into index.html still enforces `connect-src 'none'`.
+
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: geolocation=(), camera=(), microphone=(), usb=(), payment=(), interest-cohort=()
+  Cross-Origin-Opener-Policy: same-origin

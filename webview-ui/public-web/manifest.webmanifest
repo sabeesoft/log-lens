@@ -1,0 +1,30 @@
+{
+  "name": "Log Lens — private log viewer",
+  "short_name": "Log Lens",
+  "description": "A private, local viewer for JSON, NDJSON and CSV logs. Everything runs on your device — no upload, no server, no telemetry.",
+  "start_url": "./",
+  "scope": "./",
+  "id": "log-lens",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "categories": ["developer", "utilities", "productivity"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "./",
+      "accept": {
+        "application/json": [".json", ".ndjson"],
+        "text/csv": [".csv"],
+        "text/plain": [".log"]
+      }
+    }
+  ]
+}

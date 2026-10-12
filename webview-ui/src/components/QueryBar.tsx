@@ -1,5 +1,7 @@
-import { useMemo } from 'react';
-import { Play, AlertCircle, Settings, FileText, Loader2, Network, Search, Terminal } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Play, AlertCircle, Settings, FileText, Loader2, Network, Search, Terminal, FolderOpen, Plus, ChevronDown } from 'lucide-react';
+import { getHost, getWebHost } from '../host';
+import type { OpenMode } from '../host/webHost';
 import { useLogStore } from '../store/logStore';
 import { useLogFields } from '../hooks/useLogFields';
 import { autoDetectLevelField, autoDetectTimestampField } from '../utils/fieldMapping';
@@ -214,6 +216,8 @@ export default function QueryBar() {
               SERVICE MAP
             </button>
           )}
+
+          <OpenFileButton />
           <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>
       )}
@@ -397,6 +401,133 @@ function ModeToggle({ mode, setMode }: { mode: ViewMode; setMode: (m: ViewMode) 
         );
       })}
     </div>
+  );
+}
+
+// Web/PWA only: a discoverable "Open file" action in the toolbar, offering two
+// choices — open a fresh file, or append one to the current logs. In VS Code
+// files are opened through the editor, so this is hidden there.
+function OpenFileButton() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    window.addEventListener('mousedown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('mousedown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  if (getHost().kind !== 'web') {
+    return null;
+  }
+
+  const choose = (mode: OpenMode) => {
+    setOpen(false);
+    getWebHost()?.requestOpen(mode);
+  };
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        title="Open a log file — everything stays in your browser"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '5px',
+          padding: '3px 8px',
+          backgroundColor: open ? 'var(--vscode-charts-blue, #3b82f6)' : 'transparent',
+          color: open ? 'var(--vscode-foreground, #fff)' : 'var(--vscode-textLink-foreground, #60a5fa)',
+          borderRadius: '5px',
+          border: '1px solid var(--vscode-textLink-foreground, #60a5fa)',
+          cursor: 'pointer',
+          fontSize: '11px',
+          fontFamily: 'monospace',
+        }}
+      >
+        <FolderOpen size={12} />
+        OPEN FILE
+        <ChevronDown size={12} style={{ opacity: 0.8 }} />
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 4px)',
+            right: 0,
+            zIndex: 50,
+            minWidth: '220px',
+            padding: '4px',
+            backgroundColor: 'var(--vscode-editorWidget-background, #1e1e1e)',
+            border: '1px solid var(--vscode-panel-border, #3f3f46)',
+            borderRadius: '6px',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.4)',
+          }}
+        >
+          <OpenMenuItem
+            Icon={FolderOpen}
+            label="Open file"
+            sub="Replace the current logs"
+            onClick={() => choose('replace')}
+          />
+          <OpenMenuItem
+            Icon={Plus}
+            label="Add to current logs"
+            sub="Append this file's entries"
+            onClick={() => choose('append')}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OpenMenuItem({
+  Icon,
+  label,
+  sub,
+  onClick,
+}: {
+  Icon: typeof FolderOpen;
+  label: string;
+  sub: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '8px',
+        width: '100%',
+        padding: '7px 9px',
+        backgroundColor: 'transparent',
+        color: 'var(--vscode-foreground, #e4e4e7)',
+        border: 'none',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        textAlign: 'left',
+        fontFamily: 'monospace',
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--vscode-list-hoverBackground, rgba(255,255,255,0.06))')}
+      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+    >
+      <Icon size={14} style={{ marginTop: '1px', color: 'var(--vscode-charts-blue, #3b82f6)', flexShrink: 0 }} />
+      <span style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+        <span style={{ fontSize: '12px', fontWeight: 600 }}>{label}</span>
+        <span style={{ fontSize: '10.5px', color: 'var(--vscode-descriptionForeground, #a1a1aa)' }}>{sub}</span>
+      </span>
+    </button>
   );
 }
 

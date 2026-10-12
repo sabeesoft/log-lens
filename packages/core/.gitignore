@@ -1,0 +1,8 @@
+node_modules
+dist
+*.tsbuildinfo
+# Stray compiled output next to sources (tsup emits to dist/, jest runs in-memory)
+src/**/*.js
+src/**/*.js.map
+/tsup.config.js
+/tsup.config.js.map
