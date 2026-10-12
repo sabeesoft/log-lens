@@ -3,5 +3,6 @@ node_modules
 dist
 dist-ssr
 build
+build-web
 build-ssr
 *.local

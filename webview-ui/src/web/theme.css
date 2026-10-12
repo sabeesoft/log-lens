@@ -1,0 +1,58 @@
+/*
+ * Standalone web / PWA theme.
+ *
+ * The UI was built for a VS Code webview, so it reads `--vscode-*` theme tokens
+ * throughout (385+ call sites). In the browser those tokens don't exist, so we
+ * define them here once, mapped to Log Lens's own dark palette. This lets every
+ * component render identically in the browser with zero changes to call sites.
+ */
+:root {
+  /* Typography */
+  --vscode-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    "Oxygen", "Ubuntu", "Cantarell", sans-serif;
+
+  /* Base surfaces & text */
+  --vscode-foreground: #f3f4f6;
+  --vscode-editor-foreground: #f3f4f6;
+  --vscode-descriptionForeground: #9ca3af;
+  --vscode-disabledForeground: #6b7280;
+  --vscode-editor-background: #0a0a0a;
+  --vscode-editorWidget-background: #111113;
+  --vscode-sideBar-background: #0d0d0f;
+  --vscode-panel-border: #27272a;
+
+  /* Inputs */
+  --vscode-input-background: #18181b;
+  --vscode-input-foreground: #f3f4f6;
+  --vscode-input-border: #3f3f46;
+  --vscode-input-placeholderForeground: #71717a;
+
+  /* Buttons & interactive */
+  --vscode-button-background: #3b82f6;
+  --vscode-list-hoverBackground: rgba(255, 255, 255, 0.05);
+  --vscode-list-activeSelectionBackground: rgba(59, 130, 246, 0.25);
+  --vscode-textLink-foreground: #60a5fa;
+
+  /* Feedback */
+  --vscode-editorError-foreground: #f87171;
+  --vscode-editor-findMatchHighlightBackground: rgba(250, 204, 21, 0.35);
+
+  /* Chart / level accents */
+  --vscode-charts-blue: #3b82f6;
+  --vscode-charts-green: #22c55e;
+  --vscode-charts-red: #ef4444;
+  --vscode-charts-yellow: #eab308;
+  --vscode-charts-purple: #a855f7;
+
+  /* Syntax tokens (JSON tree) — VS Code Dark+ equivalents */
+  --vscode-debugTokenExpression-name: #9cdcfe;
+  --vscode-debugTokenExpression-string: #ce9178;
+  --vscode-debugTokenExpression-number: #b5cea8;
+  --vscode-debugTokenExpression-boolean: #569cd6;
+  --vscode-debugTokenExpression-error: #f87171;
+
+  /* Scrollbars */
+  --vscode-scrollbarSlider-background: rgba(121, 121, 121, 0.4);
+  --vscode-scrollbarSlider-hoverBackground: rgba(100, 100, 100, 0.7);
+  --vscode-scrollbarSlider-activeBackground: rgba(85, 85, 85, 0.8);
+}
