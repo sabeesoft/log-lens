@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.2
+
+### Changed
+- Added a `homepage` field pointing to the product page at
+  [sabeesoft.com/en/loglens](https://sabeesoft.com/en/loglens).
+
 ## 2.0.1
 
 ### Changed

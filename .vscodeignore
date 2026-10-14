@@ -21,6 +21,15 @@ webview-ui/package.json
 webview-ui/package-lock.json
 webview-ui/node_modules/**
 
+# The extension host code is bundled into out/extension.js by esbuild
+# (scripts/esbuild.js), with all dependencies inlined. So none of node_modules,
+# the source packages, or the build scripts need to ship in the VSIX.
+node_modules/**
+packages/**
+scripts/**
+test/**
+out/test/**
+
 # Ignore Misc
 .yarnrc
 vsc-extension-quickstart.md
