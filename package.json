@@ -2,7 +2,7 @@
   "name": "log-lens",
   "displayName": "Log lens",
   "description": "Log lens a simple local tool to visualize JSON logs",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "publisher": "sabeesoft",
   "icon": "assets/icon.png",
   "license": "Apache-2.0",
@@ -10,6 +10,7 @@
     "type": "git",
     "url": "https://github.com/sabeesoft/log-lens.git"
   },
+  "homepage": "https://sabeesoft.com/en/loglens",
   "engines": {
     "vscode": "^1.75.0"
   },
@@ -110,7 +111,11 @@
     "install:all": "npm install && cd webview-ui && npm install",
     "start:webview": "cd webview-ui && npm run start",
     "build:webview": "cd webview-ui && npm run build",
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run typecheck && npm run clean && npm run bundle",
+    "clean": "rm -rf out",
+    "bundle": "esbuild src/extension.ts --bundle --minify --sourcemap --platform=node --target=node16 --format=cjs --external:vscode --outfile=out/extension.js",
+    "bundle:watch": "esbuild src/extension.ts --bundle --sourcemap --platform=node --target=node16 --format=cjs --external:vscode --outfile=out/extension.js --watch",
+    "typecheck": "tsc --noEmit -p ./",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
@@ -122,6 +127,7 @@
     "@types/vscode": "^1.46.0",
     "@typescript-eslint/eslint-plugin": "^4.14.1",
     "@typescript-eslint/parser": "^4.14.1",
+    "esbuild": "^0.27.7",
     "eslint": "^7.19.0",
     "glob": "^7.1.6",
     "prettier": "^2.2.1",
