@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.1.0
+
+### Security
+- Bumped **csv-parse** from 6.1.0 to 7.0.3, resolving a prototype-pollution
+  advisory (GHSA-8cw4-87c7-c6xx) reachable through the `columns` parsing path
+  that Log Lens uses for CSV headers. This was the only advisory affecting code
+  shipped to users; all remaining `npm audit` findings are build/dev tooling and
+  never reach the published extension or web app.
+
 ## 2.0.2
 
 ### Changed
