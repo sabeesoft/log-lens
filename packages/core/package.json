@@ -42,7 +42,7 @@
     "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
-    "csv-parse": "^6.1.0"
+    "csv-parse": "^7.0.3"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
