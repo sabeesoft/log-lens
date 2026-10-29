@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.1
+
+### Changed
+- **Internal:** refreshed web-app runtime dependencies within their existing
+  version ranges — React 19.3, Tailwind CSS 4.3, `@xyflow/react` 12.12 and
+  Zustand 5.0.16. Lockfile only; no user-facing changes.
+
 ## 2.1.0
 
 ### Security
