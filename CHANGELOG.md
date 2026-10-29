@@ -9,6 +9,11 @@
   shipped to users; all remaining `npm audit` findings are build/dev tooling and
   never reach the published extension or web app.
 
+### Changed
+- **Internal:** refreshed web-app runtime dependencies within their existing
+  version ranges — React 19.3, Tailwind CSS 4.3, `@xyflow/react` 12.12 and
+  Zustand 5.0.16. Lockfile only; no user-facing changes.
+
 ## 2.0.2
 
 ### Changed
