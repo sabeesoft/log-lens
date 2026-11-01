@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.1.2
+
+### Security / Internal
+- **Toolchain cleanup — no user-facing changes.** The shipped extension,
+  webview and `@sabeesoft/loglens-core` runtime stay identical; only
+  build- and test-time dependencies moved. `npm audit --omit=dev` reports
+  **0 vulnerabilities** in all three packages.
+- Removed unused root dev dependencies: `vscode-test`, `glob`, `@types/glob`
+  (no test harness or `glob` import existed). This also dropped the
+  `vscode-test` → `http-proxy-agent` advisory chain.
+- Modernised root dev tooling: ESLint 7 → 9 (migrated `.eslintrc.json` to a
+  flat `eslint.config.mjs`), `@typescript-eslint/*` 4 → unified
+  `typescript-eslint` 8, Prettier 2 → 3, `@types/node` 12 → 22, esbuild
+  0.27 → 0.28.
+- `webview-ui`: moved `@tailwindcss/vite` to `devDependencies` (build-only)
+  and bumped the Vite/Rollup/PostCSS/nanoid toolchain — `npm audit` is now
+  fully clean here.
+- `packages/core`: bumped `tsup` 8 → 9 (pulls esbuild 0.28), clearing the
+  esbuild dev-server advisory.
+- Residual: a dev-only `minimatch` ReDoS advisory remains in the Jest test
+  chain and in `typescript-eslint`'s `typescript-estree` (which pins
+  `minimatch ^10.2.2`). It is not reachable at runtime and has no upstream
+  fix yet; left untouched rather than forcing a risky override.
+
 ## 2.1.1
 
 ### Changed
