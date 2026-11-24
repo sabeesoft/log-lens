@@ -27,6 +27,7 @@ export default function LogList({
 }: LogListProps) {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [listKey, setListKey] = useState(0);
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const listRef = useRef<List>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const rowHeights = useRef<Map<number, number>>(new Map());
@@ -70,10 +71,10 @@ export default function LogList({
     };
   }, [updateDimensions]);
 
-  // Reset row heights and force list re-render when logs or visible fields change
-  // Note: activeSearchTerms is intentionally excluded to prevent blinking on every keystroke
+  // Reset row heights, expanded state, and force list re-render when logs or visible fields change
   useEffect(() => {
     rowHeights.current.clear();
+    setExpandedRows(new Set());
     setListKey(prev => prev + 1);
   }, [logs, visibleFields]);
 
@@ -86,6 +87,21 @@ export default function LogList({
       rowHeights.current.set(index, height);
       listRef.current?.resetAfterIndex(index);
     }
+  }, []);
+
+  const toggleExpand = useCallback((index: number) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+    // Clear cached height so it gets re-measured
+    rowHeights.current.delete(index);
+    listRef.current?.resetAfterIndex(index);
   }, []);
 
   if (logs.length === 0) {
@@ -139,7 +155,9 @@ export default function LogList({
               setRowHeight={setRowHeight}
               log={logs[index]}
               isSelected={selectedLogIndex === index}
+              expanded={expandedRows.has(index)}
               onClick={() => onSelectLog(index)}
+              onToggleExpand={() => toggleExpand(index)}
               activeSearchTerms={activeSearchTerms}
               getLevelBorderColor={getLevelBorderColor}
               visibleFields={visibleFields}
@@ -158,7 +176,9 @@ interface RowWrapperProps {
   setRowHeight: (index: number, height: number) => void;
   log: LogEntry;
   isSelected: boolean;
+  expanded: boolean;
   onClick: () => void;
+  onToggleExpand: () => void;
   activeSearchTerms: string[];
   getLevelBorderColor: (level: string) => string;
   visibleFields: string[];
@@ -171,7 +191,9 @@ function RowWrapper({
   setRowHeight,
   log,
   isSelected,
+  expanded,
   onClick,
+  onToggleExpand,
   activeSearchTerms,
   getLevelBorderColor,
   visibleFields,
@@ -185,14 +207,16 @@ function RowWrapper({
       const height = rowRef.current.getBoundingClientRect().height;
       setRowHeight(index, height);
     }
-  }, [index, setRowHeight, log, visibleFields]);
+  }, [index, setRowHeight, log, visibleFields, expanded]);
 
   return (
     <div ref={rowRef}>
       <LogRow
         log={log}
         isSelected={isSelected}
+        expanded={expanded}
         onClick={onClick}
+        onToggleExpand={onToggleExpand}
         activeSearchTerms={activeSearchTerms}
         getLevelBorderColor={getLevelBorderColor}
         visibleFields={visibleFields}

@@ -240,6 +240,7 @@ const TreeNode = ({ value, nodeKey, depth }: { value: any; nodeKey: string | nul
 export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalProps) {
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [selectedLogIndex, setSelectedLogIndex] = useState<number | null>(null);
+  const [expandedTraceRows, setExpandedTraceRows] = useState<Set<number>>(new Set());
   const [splitPosition, setSplitPosition] = useState(50); // percentage for top panel
   const [sidebarWidth, setSidebarWidth] = useState(400); // sidebar width in pixels
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
@@ -653,7 +654,16 @@ export default function TraceModal({ traceId, traceLogs, onClose }: TraceModalPr
                   key={index}
                   log={log}
                   isSelected={selectedLogIndex === index}
+                  expanded={expandedTraceRows.has(index)}
                   onClick={() => setSelectedLogIndex(selectedLogIndex === index ? null : index)}
+                  onToggleExpand={() => {
+                    setExpandedTraceRows(prev => {
+                      const next = new Set(prev);
+                      if (next.has(index)) next.delete(index);
+                      else next.add(index);
+                      return next;
+                    });
+                  }}
                   activeSearchTerms={[]}
                   getLevelBorderColor={getLevelBorderColor}
                   visibleFields={['all']}
