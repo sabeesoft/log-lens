@@ -58,8 +58,12 @@ const chevronStyle: React.CSSProperties = {
   cursor: 'pointer',
 };
 
+const stringify = (v: unknown): string =>
+  v === null || v === undefined ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v);
+
 const getSummaryText = (log: LogEntry, visibleFields: string[]): string => {
   if (typeof log === 'string') return log;
+  if (!log || typeof log !== 'object') return String(log);
 
   const showAllFields = visibleFields.length === 0 || visibleFields.includes('all');
 
@@ -68,21 +72,21 @@ const getSummaryText = (log: LogEntry, visibleFields: string[]): string => {
       .map((field) => {
         const value = getNestedValue(log, field);
         if (value === undefined || value === null) return null;
-        return `${field}: ${typeof value === 'object' ? JSON.stringify(value) : String(value)}`;
+        return `${field}: ${stringify(value)}`;
       })
       .filter(Boolean)
       .join(' | ');
   }
 
-  const msg = log.message || log.msg || log['@message'];
-  if (msg) return String(msg);
+  const msg = log.message ?? log.msg ?? log['@message'];
+  if (msg !== undefined && msg !== null) return stringify(msg);
 
   const keys = Object.keys(log);
   const preview: string[] = [];
   for (const key of keys) {
     if (['level', 'severity', 'timestamp', 'time', 'date', '@timestamp'].includes(key)) continue;
     const v = log[key];
-    const s = typeof v === 'object' ? JSON.stringify(v) : String(v);
+    const s = stringify(v);
     preview.push(`${key}=${s.length > 60 ? s.slice(0, 60) + '…' : s}`);
     if (preview.join(' ').length > 200) break;
   }

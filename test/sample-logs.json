@@ -110,5 +110,249 @@
   { "@timestamp": "2024-01-18T11:03:00.050Z", "@logStream": "db-server-01", "@message": { "level": "info", "message": "Database ping", "latency": 5, "trace_id": "trace_dotkey_001", "span_id": "dk_span_003", "parent_span_id": "dk_span_002", "service.name": "database" }},
   { "@timestamp": "2024-01-18T11:03:00.060Z", "@logStream": "cache-server-01", "@message": { "level": "info", "message": "Cache ping", "latency": 2, "trace_id": "trace_dotkey_001", "span_id": "dk_span_004", "parent_span_id": "dk_span_002", "service.name": "redis-cache" }},
   { "@timestamp": "2024-01-18T11:03:00.080Z", "@logStream": "health-server-01", "@message": { "level": "info", "message": "All health checks passed", "trace_id": "trace_dotkey_001", "span_id": "dk_span_002", "parent_span_id": "dk_span_001", "service.name": "health-checker" }},
-  { "@timestamp": "2024-01-18T11:03:00.090Z", "@logStream": "app-server-01", "@message": { "level": "info", "message": "Health check response", "status": 200, "trace_id": "trace_dotkey_001", "span_id": "dk_span_001", "parent_span_id": null, "service.name": "api-gateway" }}
+  { "@timestamp": "2024-01-18T11:03:00.090Z", "@logStream": "app-server-01", "@message": { "level": "info", "message": "Health check response", "status": 200, "trace_id": "trace_dotkey_001", "span_id": "dk_span_001", "parent_span_id": null, "service.name": "api-gateway" }},
+
+  "Logs with large nested objects:",
+  {
+    "level": "error",
+    "timestamp": "2024-01-18T12:00:00.000Z",
+    "message": {
+      "text": "Unhandled exception in request pipeline",
+      "summary": "TypeError thrown while processing /api/v1/checkout",
+      "severity": "critical"
+    },
+    "error": {
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'address')",
+      "stack": "TypeError: Cannot read properties of undefined (reading 'address')\n    at CheckoutService.validateShipping (/app/src/services/checkout.ts:142:38)\n    at CheckoutService.process (/app/src/services/checkout.ts:87:22)\n    at async Router.handleRequest (/app/src/router.ts:55:14)\n    at async Server.onRequest (/app/src/server.ts:31:5)",
+      "code": "ERR_UNDEFINED_ACCESS",
+      "cause": {
+        "field": "user.shippingAddress.address",
+        "userId": "usr_broken_001",
+        "profileSnapshot": { "name": "John Doe", "email": "john@example.com", "shippingAddress": null }
+      }
+    },
+    "request": {
+      "method": "POST",
+      "url": "/api/v1/checkout",
+      "headers": {
+        "content-type": "application/json",
+        "authorization": "Bearer eyJhbGc...redacted",
+        "x-request-id": "req_9f8e7d6c",
+        "x-forwarded-for": "203.0.113.42",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+      },
+      "body": {
+        "cartId": "cart_abc123",
+        "items": [
+          { "sku": "LAPTOP-PRO-16", "qty": 1, "price": 2499.99 },
+          { "sku": "USB-C-ADAPTER", "qty": 2, "price": 29.99 },
+          { "sku": "LAPTOP-SLEEVE", "qty": 1, "price": 49.99 }
+        ],
+        "shipping": { "method": "express", "estimatedDays": 2 },
+        "payment": { "method": "card", "lastFour": "4242" }
+      }
+    },
+    "response": { "status": 500, "duration": 345 },
+    "pid": 12345,
+    "hostname": "app-server-01",
+    "service": "checkout-service",
+    "trace_id": "trace_deep_001",
+    "span_id": "span_d001"
+  },
+  {
+    "level": "info",
+    "timestamp": "2024-01-18T12:01:00.000Z",
+    "message": "GraphQL query resolved",
+    "graphql": {
+      "operationName": "GetUserDashboard",
+      "operationType": "query",
+      "variables": { "userId": "usr_555", "dateRange": { "from": "2024-01-01", "to": "2024-01-18" } },
+      "selection": ["user.profile", "user.orders.edges.node", "user.notifications.unreadCount"],
+      "resolvers": [
+        { "path": "user", "duration": 5, "source": "cache" },
+        { "path": "user.profile", "duration": 2, "source": "cache" },
+        { "path": "user.orders", "duration": 120, "source": "database", "query": "SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 20" },
+        { "path": "user.orders.edges.node.items", "duration": 45, "source": "database", "batchSize": 20 },
+        { "path": "user.notifications", "duration": 8, "source": "redis" }
+      ],
+      "complexity": 42,
+      "depthLimit": 5
+    },
+    "performance": {
+      "totalDuration": 185,
+      "parsing": 3,
+      "validation": 2,
+      "execution": 180,
+      "dataloaderStats": { "batchCount": 4, "cacheHits": 12, "cacheMisses": 8 }
+    },
+    "pid": 12360,
+    "hostname": "graphql-01",
+    "service": "graphql-gateway",
+    "trace_id": "trace_deep_002",
+    "span_id": "span_d002"
+  },
+  {
+    "level": "warn",
+    "timestamp": "2024-01-18T12:02:00.000Z",
+    "message": "Anomaly detected in traffic pattern",
+    "anomaly": {
+      "type": "rate_spike",
+      "metric": "requests_per_second",
+      "current": 4500,
+      "baseline": 1200,
+      "deviation": 3.75,
+      "window": "5m",
+      "affectedEndpoints": [
+        { "path": "/api/v1/login", "rate": 2800, "normalRate": 200, "suspectedBot": true },
+        { "path": "/api/v1/register", "rate": 1200, "normalRate": 50, "suspectedBot": true },
+        { "path": "/api/v1/reset-password", "rate": 500, "normalRate": 30, "suspectedBot": false }
+      ],
+      "topSourceIPs": [
+        { "ip": "198.51.100.0/24", "count": 3200, "country": "XX", "asn": "AS00000" },
+        { "ip": "203.0.113.128/25", "count": 800, "country": "XX", "asn": "AS11111" }
+      ],
+      "mitigationApplied": {
+        "action": "rate_limit",
+        "rules": [
+          { "id": "rl_001", "pattern": "/api/v1/login", "limit": "10/min/ip", "activatedAt": "2024-01-18T12:01:55.000Z" },
+          { "id": "rl_002", "pattern": "/api/v1/register", "limit": "5/min/ip", "activatedAt": "2024-01-18T12:01:55.000Z" }
+        ],
+        "captchaEnabled": true
+      }
+    },
+    "pid": 12361,
+    "hostname": "waf-01",
+    "service": "security-gateway",
+    "trace_id": "trace_deep_003",
+    "span_id": "span_d003"
+  },
+  {
+    "level": "info",
+    "timestamp": "2024-01-18T12:03:00.000Z",
+    "message": { "event": "deployment_completed", "version": "2.14.0", "environment": "production" },
+    "deployment": {
+      "id": "deploy_abc123",
+      "version": "2.14.0",
+      "previousVersion": "2.13.2",
+      "triggeredBy": { "user": "deploy-bot", "source": "github-actions", "commitSha": "a1b2c3d4e5f6" },
+      "timeline": {
+        "started": "2024-01-18T11:50:00.000Z",
+        "buildCompleted": "2024-01-18T11:54:00.000Z",
+        "canaryStarted": "2024-01-18T11:55:00.000Z",
+        "canaryPassed": "2024-01-18T11:59:00.000Z",
+        "rollingUpdateStarted": "2024-01-18T12:00:00.000Z",
+        "completed": "2024-01-18T12:03:00.000Z"
+      },
+      "targets": [
+        { "cluster": "us-east-1", "pods": 12, "healthy": 12, "rollingDuration": 120 },
+        { "cluster": "eu-west-1", "pods": 8, "healthy": 8, "rollingDuration": 95 },
+        { "cluster": "ap-south-1", "pods": 4, "healthy": 4, "rollingDuration": 60 }
+      ],
+      "changelog": [
+        { "type": "feat", "scope": "checkout", "description": "Add Apple Pay support" },
+        { "type": "fix", "scope": "auth", "description": "Fix token refresh race condition" },
+        { "type": "perf", "scope": "search", "description": "Cache search results for 5 minutes" }
+      ],
+      "healthChecks": {
+        "readiness": { "passed": true, "latency": 45 },
+        "liveness": { "passed": true, "latency": 12 },
+        "smoke": { "passed": true, "tests": 24, "duration": 38000 }
+      }
+    },
+    "pid": 12362,
+    "hostname": "deploy-controller-01",
+    "service": "deployment-service",
+    "trace_id": "trace_deep_004",
+    "span_id": "span_d004"
+  },
+  {
+    "level": "debug",
+    "timestamp": "2024-01-18T12:04:00.000Z",
+    "message": "Database migration executed",
+    "migration": {
+      "id": "20240118_add_user_preferences",
+      "direction": "up",
+      "statements": [
+        "CREATE TABLE user_preferences (id UUID PRIMARY KEY, user_id UUID REFERENCES users(id), key VARCHAR(255), value JSONB, created_at TIMESTAMPTZ DEFAULT NOW())",
+        "CREATE INDEX idx_user_prefs_user_id ON user_preferences(user_id)",
+        "CREATE UNIQUE INDEX idx_user_prefs_user_key ON user_preferences(user_id, key)",
+        "INSERT INTO user_preferences (id, user_id, key, value) SELECT gen_random_uuid(), id, 'theme', '\"system\"'::jsonb FROM users"
+      ],
+      "results": [
+        { "statement": 1, "status": "ok", "duration": 45, "rowsAffected": 0 },
+        { "statement": 2, "status": "ok", "duration": 12, "rowsAffected": 0 },
+        { "statement": 3, "status": "ok", "duration": 15, "rowsAffected": 0 },
+        { "statement": 4, "status": "ok", "duration": 3200, "rowsAffected": 48523 }
+      ],
+      "totalDuration": 3272,
+      "rollbackPlan": "DROP TABLE IF EXISTS user_preferences"
+    },
+    "pid": 12363,
+    "hostname": "db-primary-01",
+    "service": "db-migrator"
+  },
+  {
+    "level": "error",
+    "timestamp": "2024-01-18T12:05:00.000Z",
+    "message": "Kafka consumer lag critical",
+    "kafka": {
+      "consumerGroup": "order-processor",
+      "topic": "order-events",
+      "partitions": [
+        { "id": 0, "currentOffset": 1500000, "endOffset": 1520000, "lag": 20000, "lastCommit": "2024-01-18T12:04:30.000Z" },
+        { "id": 1, "currentOffset": 1480000, "endOffset": 1519500, "lag": 39500, "lastCommit": "2024-01-18T12:03:00.000Z" },
+        { "id": 2, "currentOffset": 1510000, "endOffset": 1515000, "lag": 5000, "lastCommit": "2024-01-18T12:04:55.000Z" },
+        { "id": 3, "currentOffset": 1200000, "endOffset": 1518000, "lag": 318000, "lastCommit": "2024-01-18T11:45:00.000Z", "stuck": true }
+      ],
+      "totalLag": 382500,
+      "alertThreshold": 50000,
+      "throughput": {
+        "messagesPerSecond": 85,
+        "bytesPerSecond": 425000,
+        "avgProcessingTime": 120,
+        "p99ProcessingTime": 890
+      },
+      "deadLetterQueue": { "topic": "order-events-dlq", "count": 47, "oldestMessage": "2024-01-18T11:30:00.000Z" }
+    },
+    "pid": 12364,
+    "hostname": "kafka-consumer-01",
+    "service": "order-processor",
+    "trace_id": "trace_deep_006",
+    "span_id": "span_d006"
+  },
+  {
+    "level": "info",
+    "timestamp": "2024-01-18T12:06:00.000Z",
+    "message": "ETL pipeline stage completed",
+    "pipeline": {
+      "id": "pipe_daily_analytics",
+      "stage": "transform",
+      "input": { "source": "s3://raw-events/2024-01-17/", "files": 2400, "totalSize": "12.4GB", "format": "parquet" },
+      "output": { "destination": "s3://transformed/2024-01-17/", "files": 48, "totalSize": "3.2GB", "format": "parquet", "compression": "snappy" },
+      "transforms": [
+        { "name": "deduplicate", "inputRows": 48000000, "outputRows": 47200000, "dropped": 800000, "duration": 120000 },
+        { "name": "enrich_geo", "inputRows": 47200000, "outputRows": 47200000, "lookupHits": 46800000, "duration": 85000 },
+        { "name": "normalize_events", "inputRows": 47200000, "outputRows": 52100000, "expanded": 4900000, "duration": 65000 },
+        { "name": "aggregate_hourly", "inputRows": 52100000, "outputRows": 1200000, "duration": 95000 }
+      ],
+      "resources": {
+        "sparkExecutors": 24,
+        "peakMemory": "184GB",
+        "totalCpuTime": "18.5 hours",
+        "shuffleRead": "45GB",
+        "shuffleWrite": "12GB"
+      },
+      "qualityChecks": {
+        "nullRateThreshold": 0.01,
+        "nullRateActual": 0.003,
+        "duplicateCheck": "passed",
+        "schemaValidation": "passed",
+        "rowCountDelta": "+10.4%"
+      }
+    },
+    "pid": 12365,
+    "hostname": "spark-driver-01",
+    "service": "data-pipeline"
+  }
 ]

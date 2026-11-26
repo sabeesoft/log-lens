@@ -146,6 +146,7 @@ let stringifyCache = new WeakMap<object, string>();
 
 const getStringified = (log: LogEntry): string => {
   if (typeof log === 'string') return log;
+  if (!log || typeof log !== 'object') return String(log).toLowerCase();
   let cached = stringifyCache.get(log as object);
   if (!cached) {
     cached = JSON.stringify(log).toLowerCase();

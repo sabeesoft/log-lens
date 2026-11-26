@@ -13,7 +13,7 @@ export function detectFormat(fileName: string): LogFormat {
   if (ext === '.csv') {
     return 'CSV';
   }
-  if (ext === '.log' || ext === '.ndjson') {
+  if (ext === '.log' || ext === '.ndjson' || ext === '.jsonl') {
     return 'NDJSON';
   }
   return 'JSON';
@@ -34,24 +34,64 @@ function parseNdjson(content: string): ParseResult {
   return { logs, errors, format: 'NDJSON' };
 }
 
+/** Strip UTF-8 BOM if present. */
+function stripBom(text: string): string {
+  return text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text;
+}
+
+/** Try to extract a log array from a wrapper object (e.g. { "logs": [...] }). */
+function unwrapObject(obj: Record<string, unknown>): LogEntry[] | null {
+  const values = Object.values(obj);
+  for (const v of values) {
+    if (Array.isArray(v) && v.length > 0) {
+      return v as LogEntry[];
+    }
+  }
+  return null;
+}
+
+/** Remove trailing commas before `]` or `}` — a common hand-edit artifact. */
+function stripTrailingCommas(text: string): string {
+  return text.replace(/,\s*([\]}])/g, '$1');
+}
+
 /** Parse file content into log entries according to the detected format. */
 export function parseContent(content: string, format: LogFormat): ParseResult {
+  const cleaned = stripBom(content);
+
   if (format === 'CSV') {
-    const result = parseCsvContent(content);
+    const result = parseCsvContent(cleaned);
     return { logs: result.logs, errors: result.errors, format };
   }
   if (format === 'NDJSON') {
-    return parseNdjson(content);
+    return parseNdjson(cleaned);
   }
+
   // JSON: an array (the common case) or a single object; fall back to NDJSON
   // when a `.json` file turns out to be line-delimited.
-  try {
-    const parsed = JSON.parse(content.trim());
-    if (Array.isArray(parsed)) {
-      return { logs: parsed, errors: [], format };
+  const tryParse = (text: string): ParseResult | null => {
+    try {
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed)) {
+        return { logs: parsed, errors: [], format };
+      }
+      if (parsed && typeof parsed === 'object') {
+        const unwrapped = unwrapObject(parsed as Record<string, unknown>);
+        if (unwrapped) {
+          return { logs: unwrapped, errors: [], format };
+        }
+      }
+      return { logs: [parsed], errors: [], format };
+    } catch {
+      return null;
     }
-    return { logs: [parsed], errors: [], format };
-  } catch {
-    return parseNdjson(content);
+  };
+
+  const trimmed = cleaned.trim();
+  const result = tryParse(trimmed) ?? tryParse(stripTrailingCommas(trimmed));
+  if (result) {
+    return result;
   }
+
+  return parseNdjson(cleaned);
 }

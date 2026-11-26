@@ -22,7 +22,8 @@ function loadActiveEditor(context: ExtensionContext, format: LogFormat, requireE
   const document = editor.document;
   const filePath = document.fileName;
 
-  if (format === "JSON" && document.languageId !== "json" && !filePath.endsWith(".json")) {
+  const jsonLikeIds = new Set(["json", "jsonc", "jsonl"]);
+  if (format === "JSON" && !jsonLikeIds.has(document.languageId) && !/\.json[c5l]?$/i.test(filePath)) {
     window.showWarningMessage("Please open a JSON file containing log data.");
     return;
   }
@@ -72,7 +73,7 @@ export function activate(context: ExtensionContext) {
         canSelectMany: false,
         openLabel: "Open with Log Lens",
         filters: {
-          "Log files": ["json", "log", "ndjson", "csv"],
+          "Log files": ["json", "jsonl", "log", "ndjson", "csv"],
           "All files": ["*"],
         },
       });
