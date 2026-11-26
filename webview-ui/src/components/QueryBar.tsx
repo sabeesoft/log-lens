@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Play, AlertCircle, Settings, FileText, Loader2, Network, Search, Terminal, FolderOpen, Plus, ChevronDown } from 'lucide-react';
+import { Play, AlertCircle, Settings, FileText, Loader2, Network, Search, Terminal, FolderOpen, Plus, ChevronDown, HelpCircle } from 'lucide-react';
 import { getHost, getWebHost } from '../host';
 import type { OpenMode } from '../host/webHost';
 import { useLogStore } from '../store/logStore';
@@ -265,6 +265,8 @@ export default function QueryBar() {
               <Play size={13} />
               Run
             </button>
+
+            <QueryHelp onInsert={(q) => { setQueryText(q); runQuery(q); }} />
           </>
         )}
 
@@ -528,6 +530,133 @@ function OpenMenuItem({
         <span style={{ fontSize: '10.5px', color: 'var(--vscode-descriptionForeground, #a1a1aa)' }}>{sub}</span>
       </span>
     </button>
+  );
+}
+
+const EXAMPLE_QUERIES = [
+  { label: 'Filter by level', query: 'filter level = "error"' },
+  { label: 'Select specific fields', query: 'fields @timestamp, level, message' },
+  { label: 'Sort by timestamp', query: 'sort @timestamp desc' },
+  { label: 'Limit results', query: 'filter level = "warn" | limit 100' },
+  { label: 'Combine pipes', query: 'fields @timestamp, level, message | filter level = "error" | sort @timestamp desc' },
+  { label: 'Pattern match (like)', query: 'filter message like "timeout"' },
+  { label: 'Multiple conditions', query: 'filter level = "error" and message like "connection"' },
+  { label: 'Numeric comparison', query: 'filter status >= 400' },
+  { label: 'In list', query: 'filter level in ("error", "fatal")' },
+  { label: 'Negate', query: 'filter not level = "debug"' },
+];
+
+function QueryHelp({ onInsert }: { onInsert: (query: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    window.addEventListener('mousedown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('mousedown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        title="Query examples & syntax help"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '34px',
+          height: '34px',
+          backgroundColor: open ? 'var(--vscode-charts-blue, #3b82f6)' : 'var(--vscode-editorWidget-background, #222)',
+          color: open ? 'var(--vscode-foreground, #fff)' : 'var(--vscode-descriptionForeground, #a1a1aa)',
+          borderRadius: '6px',
+          border: '1px solid',
+          borderColor: open ? 'var(--vscode-charts-blue, #3b82f6)' : 'var(--vscode-panel-border, #333)',
+          cursor: 'pointer',
+          flexShrink: 0,
+        }}
+      >
+        <HelpCircle size={15} />
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 6px)',
+            right: 0,
+            zIndex: 100,
+            width: '420px',
+            maxHeight: '400px',
+            overflowY: 'auto',
+            padding: '10px',
+            backgroundColor: 'var(--vscode-editorWidget-background, #1e1e1e)',
+            border: '1px solid var(--vscode-panel-border, #3f3f46)',
+            borderRadius: '8px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            fontFamily: 'monospace',
+          }}
+        >
+          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--vscode-foreground, #e4e4e7)', marginBottom: '6px' }}>
+            Query syntax
+          </div>
+          <div style={{ fontSize: '11px', color: 'var(--vscode-descriptionForeground, #a1a1aa)', marginBottom: '10px', lineHeight: '1.5' }}>
+            Pipe-separated commands: <code style={{ color: 'var(--vscode-charts-blue, #4fc1ff)' }}>fields</code>,{' '}
+            <code style={{ color: 'var(--vscode-charts-blue, #4fc1ff)' }}>filter</code>,{' '}
+            <code style={{ color: 'var(--vscode-charts-blue, #4fc1ff)' }}>sort</code>,{' '}
+            <code style={{ color: 'var(--vscode-charts-blue, #4fc1ff)' }}>limit</code>.
+            Use <code style={{ color: 'var(--vscode-charts-purple, #c586c0)' }}>and</code>,{' '}
+            <code style={{ color: 'var(--vscode-charts-purple, #c586c0)' }}>or</code>,{' '}
+            <code style={{ color: 'var(--vscode-charts-purple, #c586c0)' }}>not</code>,{' '}
+            <code style={{ color: 'var(--vscode-charts-purple, #c586c0)' }}>in</code>,{' '}
+            <code style={{ color: 'var(--vscode-charts-purple, #c586c0)' }}>like</code> in filters.
+            Lines starting with <code style={{ color: 'var(--vscode-descriptionForeground, #6a9955)' }}>#</code> are comments.
+          </div>
+
+          <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--vscode-descriptionForeground, #a1a1aa)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Examples — click to use
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {EXAMPLE_QUERIES.map((ex) => (
+              <button
+                key={ex.label}
+                onClick={() => { onInsert(ex.query); setOpen(false); }}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px',
+                  padding: '6px 8px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  fontFamily: 'monospace',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--vscode-list-hoverBackground, rgba(255,255,255,0.06))')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--vscode-foreground, #e4e4e7)' }}>
+                  {ex.label}
+                </span>
+                <span style={{ fontSize: '11px', color: 'var(--vscode-charts-blue, #60a5fa)' }}>
+                  {ex.query}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
