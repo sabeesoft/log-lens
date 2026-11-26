@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.1
+
+### Fixed
+- **Query table view:** object and array field values now display their full
+  JSON text in table cells instead of a collapsed badge (`{…} 3 keys` /
+  `1.2 KB`). The cell text is truncated with ellipsis when it overflows, and
+  the full JSON is available on hover via tooltip.
+
 ## 2.1.2
 
 ### Security / Internal
