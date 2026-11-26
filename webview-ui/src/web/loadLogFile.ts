@@ -18,7 +18,7 @@ export async function loadLogFile(file: File): Promise<LoadResult> {
   return { logs: logs as LogsPayload['logs'], fileName: file.name, errors, format };
 }
 
-const ACCEPT_EXTENSIONS = ['.json', '.ndjson', '.log', '.csv'];
+const ACCEPT_EXTENSIONS = ['.json', '.jsonl', '.ndjson', '.log', '.csv'];
 
 /** A chosen file, plus its File System Access handle when the platform gave one. */
 export interface PickedFile {
@@ -44,7 +44,7 @@ export async function pickLogFile(): Promise<PickedFile | null> {
           {
             description: 'Log files',
             accept: {
-              'application/json': ['.json', '.ndjson'],
+              'application/json': ['.json', '.jsonl', '.ndjson'],
               'text/csv': ['.csv'],
               'text/plain': ['.log'],
             },

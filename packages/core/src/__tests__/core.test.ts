@@ -42,6 +42,130 @@ describe('parseContent', () => {
     const r = parseContent('{"a":1}\n{"a":2}', 'JSON');
     expect(r.logs).toHaveLength(2);
   });
+
+  it('detects .jsonl as NDJSON', () => {
+    expect(detectFormat('events.jsonl')).toBe('NDJSON');
+  });
+
+  it('strips UTF-8 BOM before parsing', () => {
+    const r = parseContent('﻿[{"a":1}]', 'JSON');
+    expect(r.logs).toHaveLength(1);
+    expect(r.errors).toHaveLength(0);
+  });
+
+  it('tolerates trailing commas in JSON arrays', () => {
+    const r = parseContent('[{"a":1},{"a":2},]', 'JSON');
+    expect(r.logs).toHaveLength(2);
+    expect(r.errors).toHaveLength(0);
+  });
+
+  it('unwraps a wrapper object with a single array field', () => {
+    const input = JSON.stringify({
+      data: [
+        { level: 'info', message: 'boot' },
+        { level: 'error', message: 'crash' },
+      ],
+    });
+    const r = parseContent(input, 'JSON');
+    expect(r.logs).toHaveLength(2);
+    expect(r.logs[0]).toEqual({ level: 'info', message: 'boot' });
+  });
+
+  it('unwraps when the array sits among scalar siblings', () => {
+    const input = JSON.stringify({
+      meta: { exported: '2026-11-26' },
+      count: 3,
+      logs: [
+        { ts: '2026-01-01', level: 'info', msg: 'a' },
+        { ts: '2026-01-02', level: 'warn', msg: 'b' },
+        { ts: '2026-01-03', level: 'error', msg: 'c' },
+      ],
+    });
+    const r = parseContent(input, 'JSON');
+    expect(r.logs).toHaveLength(3);
+  });
+
+  it('keeps a single flat object as one log entry (no unwrap)', () => {
+    const r = parseContent('{"level":"info","message":"hello"}', 'JSON');
+    expect(r.logs).toEqual([{ level: 'info', message: 'hello' }]);
+  });
+
+  it('handles logs with deeply nested objects in fields', () => {
+    const input = JSON.stringify([
+      {
+        timestamp: '2026-01-01T00:00:00Z',
+        level: 'info',
+        message: { text: 'request received', details: { path: '/api/users', method: 'GET' } },
+        context: {
+          user: { id: 42, roles: ['admin', 'editor'] },
+          request: {
+            headers: { 'content-type': 'application/json', authorization: 'Bearer ***' },
+            query: { page: 1, limit: 50 },
+          },
+        },
+        metadata: {
+          traceId: 'abc-123',
+          spans: [
+            { name: 'db.query', duration: 12 },
+            { name: 'cache.get', duration: 2 },
+          ],
+        },
+      },
+      {
+        timestamp: '2026-01-01T00:00:01Z',
+        level: 'error',
+        message: 'unhandled exception',
+        error: {
+          name: 'TypeError',
+          message: 'Cannot read properties of undefined',
+          stack: 'TypeError: Cannot read properties of undefined\n    at handler (/app/src/handler.ts:42:10)',
+        },
+        context: { user: null, request: { headers: {}, query: {} } },
+      },
+    ]);
+    const r = parseContent(input, 'JSON');
+    expect(r.logs).toHaveLength(2);
+    expect(r.errors).toHaveLength(0);
+    expect((r.logs[0] as Record<string, any>).context.user.roles).toEqual(['admin', 'editor']);
+    expect((r.logs[1] as Record<string, any>).error.name).toBe('TypeError');
+  });
+
+  it('handles logs where message field is an object, not a string', () => {
+    const input = JSON.stringify([
+      { level: 'info', message: { action: 'login', userId: 7 } },
+      { level: 'warn', message: { action: 'rate_limit', ip: '10.0.0.1', count: 150 } },
+    ]);
+    const r = parseContent(input, 'JSON');
+    expect(r.logs).toHaveLength(2);
+    expect((r.logs[0] as Record<string, any>).message).toEqual({ action: 'login', userId: 7 });
+  });
+
+  it('handles mixed-depth NDJSON with large nested payloads', () => {
+    const lines = [
+      JSON.stringify({ level: 'info', msg: 'simple' }),
+      JSON.stringify({
+        level: 'debug',
+        msg: 'complex',
+        payload: {
+          items: Array.from({ length: 50 }, (_, i) => ({
+            id: i,
+            name: `item-${i}`,
+            tags: ['a', 'b', 'c'],
+            meta: { created: '2026-01-01', nested: { deep: true } },
+          })),
+        },
+      }),
+      'not valid json at all',
+      JSON.stringify({ level: 'error', msg: 'done', stats: { total: 100, failed: 1, timings: [12, 34, 56] } }),
+    ];
+    const r = parseContent(lines.join('\n'), 'NDJSON');
+    expect(r.logs).toHaveLength(3);
+    expect(r.errors).toHaveLength(1);
+    expect(r.errors[0]).toMatch(/Line 3/);
+    const payload = (r.logs[1] as Record<string, any>).payload;
+    expect(payload.items).toHaveLength(50);
+    expect(payload.items[49].meta.nested.deep).toBe(true);
+  });
 });
 
 describe('parseCsvContent', () => {
